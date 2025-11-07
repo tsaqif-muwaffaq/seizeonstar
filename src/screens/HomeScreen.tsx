@@ -2,7 +2,7 @@
 import * as React from 'react';
 import { useState } from 'react';
 
-import { View, FlatList, Text, StyleSheet, Modal, Image, TouchableOpacity } from 'react-native';
+import { View, FlatList, Text, StyleSheet, Modal, Image, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { Product } from '../types/Product';
 import { initialProducts } from '../data/products';
 import { AddProductModal } from '../components/AddProductModal';
@@ -14,6 +14,7 @@ export const HomeScreen: React.FC = () => {
   const [addModalVisible, setAddModalVisible] = useState<boolean>(false);
   const [detailModalVisible, setDetailModalVisible] = useState<boolean>(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const {width, height} = useWindowDimensions()
 
   const handleAddProduct = (newProduct: Product) => {
     setProducts(prev => [...prev, newProduct]);
@@ -25,27 +26,31 @@ export const HomeScreen: React.FC = () => {
     setDetailModalVisible(true);
   };
 
+  const isLandscape = width > height;
+  const numColumns = isLandscape ? 3 : 1;
+
   const renderItem = ({ item }: { item: Product }) => (
-    <TouchableOpacity onPress={() => handleProductPress(item)}>
-      <View style={styles.card}>
+    <TouchableOpacity 
+      onPress={() => handleProductPress(item)} 
+      style={[styles.card, isLandscape ? { width: `${100 / numColumns - 2}%` } : {}]}>
         <Image source={{ uri: item.imageUrl }} style={styles.image} />
         <Text style={styles.name}>{item.name}</Text>
         <Text style={styles.price}>Rp {item.price.toLocaleString('id-ID')}</Text>
         {item.description ? <Text style={styles.desc}>{item.description}</Text> : null}
-      </View>
     </TouchableOpacity>
   );
 
   return (
-   <View style={globalStyles.container}>
-  <Text style={globalStyles.title}>seizeonstar.catalog</Text>
-
+    <View style={globalStyles.container}>
+      <Text style={globalStyles.title}>seizeonstar.catalog</Text>
 
       <FlatList
         data={products}
         renderItem={renderItem}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.list}
+        numColumns={numColumns}
+        key={numColumns}
       />
 
       <TouchableOpacity
@@ -83,18 +88,8 @@ export const HomeScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f9f9f9',
-    padding: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
   list: {
+    paddingHorizontal: 5,
     paddingBottom: 100,
   },
   card: {
@@ -107,6 +102,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
     elevation: 3,
+    marginHorizontal: 5,
   },
   image: {
     width: '100%',
