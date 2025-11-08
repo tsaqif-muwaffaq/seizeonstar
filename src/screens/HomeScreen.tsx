@@ -1,7 +1,5 @@
-// import React, { useState } from 'react';
 import * as React from 'react';
 import { useState } from 'react';
-
 import { View, FlatList, Text, StyleSheet, Modal, Image, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { Product } from '../types/Product';
 import { initialProducts } from '../data/products';

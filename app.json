@@ -1,4 +1,8 @@
 {
   "name": "AwesomeProject",
-  "displayName": "AwesomeProject"
+  "displayName": "AwesomeProject",
+  "plugins": [
+    "expo-asset",
+    "expo-font"
+  ]
 }
