@@ -1,24 +1,35 @@
-// import React, { useState } from 'react';
 import * as React from 'react';
 import { useState } from 'react';
-
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  StyleSheet, 
+  TouchableOpacity, 
+  Alert, 
+  ScrollView,
+  Modal,
+  TouchableWithoutFeedback,
+  KeyboardAvoidingView, // TAMBAHKAN INI
+  Platform // TAMBAHKAN INI
+} from 'react-native';
 import { Product } from '../types/Product';
 import { globalStyles } from '../styles/globalStyles';
 
 interface AddProductModalProps {
   onAdd: (product: Product) => void;
   onClose: () => void;
+  visible: boolean;
 }
 
-export const AddProductModal: React.FC<AddProductModalProps> = ({ onAdd, onClose }) => {
+export const AddProductModal: React.FC<AddProductModalProps> = ({ onAdd, onClose, visible }) => {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [description, setDescription] = useState('');
 
   const validateImageUrl = (url: string) => {
-    const pattern = /^(https?:\/\/.*\.(?:png|jpg|jpeg|gif))$/i;
+    const pattern = /^(https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp))$/i;
     return pattern.test(url);
   };
 
@@ -35,7 +46,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onAdd, onClose
     }
 
     if (!validateImageUrl(imageUrl)) {
-      Alert.alert('Error', 'URL gambar tidak valid. Harus diawali http/https dan berekstensi .jpg/.png/.jpeg/.gif');
+      Alert.alert('Error', 'URL gambar tidak valid. Harus diawali http/https dan berekstensi .jpg/.png/.jpeg/.gif/.webp');
       return;
     }
 
@@ -59,60 +70,104 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onAdd, onClose
     setDescription('');
   };
 
+  const handleOverlayPress = () => {
+    onClose();
+  };
+
+  const handleModalPress = (event: any) => {
+    event.stopPropagation();
+  };
+
+  if (!visible) {
+    return null;
+  }
+
   return (
-    <View style={styles.overlay}>
-      <View style={styles.modalContainer}>
-        <ScrollView>
-          <Text style={styles.title}>Tambah Produk</Text>
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <TouchableWithoutFeedback onPress={handleOverlayPress}>
+        <View style={styles.overlay}>
+          <TouchableWithoutFeedback onPress={handleModalPress}>
+            <KeyboardAvoidingView 
+              style={styles.modalContainer}
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            >
+              <ScrollView 
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+              >
+                <Text style={styles.title}>Tambah Produk</Text>
 
-          <TextInput
-            placeholder="Nama Produk"
-            placeholderTextColor="#888"
-            style={globalStyles.input}
-            value={name}
-            onChangeText={setName}
-          />
+                <TextInput
+                  placeholder="Nama Produk"
+                  placeholderTextColor="#888"
+                  style={styles.input}
+                  value={name}
+                  onChangeText={setName}
+                  autoFocus={true} // TAMBAHKAN INI
+                  returnKeyType="next"
+                />
 
-          <TextInput
-            placeholder="Harga (angka)"
-            placeholderTextColor="#888"
-            style={styles.input}
-            value={price}
-            onChangeText={setPrice}
-            keyboardType="numeric"
-          />
+                <TextInput
+                  placeholder="Harga (contoh: 100000)"
+                  placeholderTextColor="#888"
+                  style={styles.input}
+                  value={price}
+                  onChangeText={setPrice}
+                  keyboardType="numeric"
+                  returnKeyType="next"
+                />
 
-          <TextInput
-            placeholder="URL Gambar (https://...)"
-            placeholderTextColor="#888"
-            style={styles.input}
-            value={imageUrl}
-            onChangeText={setImageUrl}
-            autoCapitalize="none"
-          />
+                <TextInput
+                  placeholder="URL Gambar (https://...)"
+                  placeholderTextColor="#888"
+                  style={styles.input}
+                  value={imageUrl}
+                  onChangeText={setImageUrl}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="next"
+                />
 
-          <TextInput
-            placeholder="Deskripsi (opsional)"
-            placeholderTextColor="#888"
-            style={[styles.input, styles.textArea]}
-            value={description}
-            onChangeText={setDescription}
-            multiline
-          />
+                <TextInput
+                  placeholder="Deskripsi (opsional)"
+                  placeholderTextColor="#888"
+                  style={[styles.input, styles.textArea]}
+                  value={description}
+                  onChangeText={setDescription}
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                  returnKeyType="done"
+                />
 
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity style={[globalStyles.button, globalStyles.buttonPrimary]} onPress={handleSubmit}>
-  <Text style={globalStyles.buttonText}>Tambah</Text>
-</TouchableOpacity>
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity 
+                    style={[styles.button, styles.submitButton]} 
+                    onPress={handleSubmit}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.buttonText}>Tambah Produk</Text>
+                  </TouchableOpacity>
 
-
-            <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onClose}>
-              <Text style={styles.buttonText}>Batal</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </View>
-    </View>
+                  <TouchableOpacity 
+                    style={[styles.button, styles.cancelButton]} 
+                    onPress={onClose}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.buttonText}>Batal</Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            </KeyboardAvoidingView>
+          </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
+    </Modal>
   );
 };
 
@@ -121,47 +176,60 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: 20,
   },
   modalContainer: {
-    width: '90%',
+    width: '100%',
+    maxWidth: 400,
     backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 20,
     maxHeight: '80%',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 20,
+    color: '#333',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#ddd',
     borderRadius: 8,
-    padding: 10,
-    marginBottom: 12,
+    padding: 12,
+    marginBottom: 16,
     fontSize: 16,
+    backgroundColor: '#fff',
     color: '#333',
   },
   textArea: {
-    height: 80,
+    height: 100,
     textAlignVertical: 'top',
   },
   buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
+    marginTop: 20,
+    gap: 12,
   },
   button: {
-    flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderRadius: 8,
-    marginHorizontal: 5,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  addButton: {
+  submitButton: {
     backgroundColor: '#2196F3',
   },
   cancelButton: {
@@ -170,5 +238,8 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
+    fontSize: 16,
   },
 });
+
+export default AddProductModal;
