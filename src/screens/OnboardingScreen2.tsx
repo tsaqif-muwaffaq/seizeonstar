@@ -105,7 +105,7 @@ export const OnboardingScreen2: React.FC<OnboardingScreen2Props> = ({ navigation
       <View style={styles.buttonContainer}>
         <TouchableOpacity 
           style={[globalStyles.button, globalStyles.buttonPrimary]}
-          onPress={() => navigation.navigate('MainTabs')} // DIUBAH: navigate ke 'HomeTab'
+          onPress={() => navigation.navigate('MainApp')} // DIUBAH: navigate ke 'HomeTab'
         >
           <Text style={globalStyles.buttonText}>Mulai Belanja</Text>
         </TouchableOpacity>
