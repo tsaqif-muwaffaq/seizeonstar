@@ -34,53 +34,53 @@ const productCategories: { [key: string]: Product[] } = {
   'Terbaru': [
     {
       id: '11',
-      name: 'Chambre de Lavain Summer Edition',
-      price: 850000,
-      imageUrl: 'https://via.placeholder.com/300x300?text=Summer+Edition',
+      name: 'Chambre de Lavain shootlove zip black',
+      price: 2000000,
+      imageUrl: 'https://d2kchovjbwl1tk.cloudfront.net/vendor/3899/product/3B613652-D93B-4C31-8A47-1583D085E59D_1691214385268.jpeg',
       description: 'Hoodie edisi musim panas dengan bahan lebih ringan'
     },
     {
       id: '12',
-      name: 'Chambre de Lavain Neon Series',
-      price: 1200000,
-      imageUrl: 'https://via.placeholder.com/300x300?text=Neon+Series',
+      name: 'Chambre de Lavain masking tape',
+      price: 1000000,
+      imageUrl: 'https://d2kchovjbwl1tk.cloudfront.net/vendor/3899/product/hoodie_masking_tape1_1720604916741.jpg',
       description: 'Hoodie dengan aksen neon untuk tampilan yang bold'
     },
     {
       id: '13',
-      name: 'Chambre de Lavain Vintage Wash',
+      name: 'Chambre de Lavain forever black',
       price: 950000,
-      imageUrl: 'https://via.placeholder.com/300x300?text=Vintage+Wash',
-      description: 'Hoodie dengan efek vintage wash yang trendy'
+      imageUrl: 'https://tse3.mm.bing.net/th/id/OIP.dgh_Nr85Y-qKKFbcKPHHcgHaHa?pid=Api&P=0&h=180',
+      description: 'Hoodie dengan desain trendy'
     }
   ],
   'Elektronik': [
     {
       id: 'e1',
-      name: 'Smartphone Flagship',
-      price: 8500000,
-      imageUrl: 'https://via.placeholder.com/300x300?text=Smartphone',
+      name: 'iphone 17 pro max',
+      price: 34500000,
+      imageUrl: 'https://tse1.mm.bing.net/th/id/OIP.V0OB6hCE9LZroc46anV0KwHaFj?pid=Api&P=0&h=180',
       description: 'Smartphone flagship dengan processor terbaru'
     },
     {
       id: 'e2',
       name: 'Wireless Earbuds',
-      price: 450000,
-      imageUrl: 'https://via.placeholder.com/300x300?text=Wireless+Earbuds',
+      price: 4500000,
+      imageUrl: 'https://tse1.mm.bing.net/th/id/OIP.9SVPktU-Q476v1w14MM_lwHaHa?pid=Api&P=0&h=180',
       description: 'Earbuds nirkabel dengan noise cancellation'
     },
     {
       id: 'e3',
-      name: 'Smart Watch',
-      price: 1200000,
-      imageUrl: 'https://via.placeholder.com/300x300?text=Smart+Watch',
+      name: 'apple Smart Watch',
+      price: 5200000,
+      imageUrl: 'https://tse1.mm.bing.net/th/id/OIP.mHC0GgPg_QyyQWppOnvElQHaHa?pid=Api&P=0&h=180',
       description: 'Smartwatch dengan fitur kesehatan lengkap'
     },
     {
       id: 'e4',
       name: 'Tablet Pro',
-      price: 5500000,
-      imageUrl: 'https://via.placeholder.com/300x300?text=Tablet',
+      price: 9500000,
+      imageUrl: 'https://tse4.mm.bing.net/th/id/OIP.IPUYLNovI_koN5vPQ39MSAHaHa?pid=Api&P=0&h=180',
       description: 'Tablet untuk produktivitas dan kreativitas'
     }
   ],
@@ -89,28 +89,28 @@ const productCategories: { [key: string]: Product[] } = {
       id: 'p1',
       name: 'Kaos Basic Cotton',
       price: 120000,
-      imageUrl: 'https://via.placeholder.com/300x300?text=Basic+Tee',
+      imageUrl: 'https://tse3.mm.bing.net/th/id/OIP.76enRI8fPl0DYtxqsevuywHaHa?pid=Api&P=0&h=180',
       description: 'Kaos basic dari katun 100% yang nyaman'
     },
     {
       id: 'p2',
-      name: 'Jeans Slim Fit',
-      price: 350000,
-      imageUrl: 'https://via.placeholder.com/300x300?text=Jeans',
-      description: 'Jeans slim fit dengan bahan denim premium'
+      name: 'baggy jeans',
+      price: 750000,
+      imageUrl: 'https://tse3.mm.bing.net/th/id/OIP.mxC4Pk5UYw3VYzqa4BhxCgHaJf?pid=Api&P=0&h=180',
+      description: 'baggy jeans dengan bahan denim premium'
     },
     {
       id: 'p3',
       name: 'Jacket Denim',
-      price: 650000,
-      imageUrl: 'https://via.placeholder.com/300x300?text=Denim+Jacket',
+      price: 850000,
+      imageUrl: 'https://tse1.mm.bing.net/th/id/OIP.Rnfh3JKC9tl5QFJ_nnoo2QHaHa?pid=Api&P=0&h=180',
       description: 'Jacket denim classic untuk style casual'
     },
     {
       id: 'p4',
-      name: 'Sneakers Sport',
-      price: 480000,
-      imageUrl: 'https://via.placeholder.com/300x300?text=Sneakers',
+      name: 'Sneakers',
+      price: 980000,
+      imageUrl: 'https://tse4.mm.bing.net/th/id/OIP.THfFUMPCq7nWD2FA_aO5vgHaG5?pid=Api&P=0&h=180',
       description: 'Sneakers untuk aktivitas sehari-hari'
     }
   ],
@@ -119,28 +119,28 @@ const productCategories: { [key: string]: Product[] } = {
       id: 'f1',
       name: 'Snack Box Premium',
       price: 75000,
-      imageUrl: 'https://via.placeholder.com/300x300?text=Snack+Box',
+      imageUrl: 'https://tse4.mm.bing.net/th/id/OIP.3XI6NJI0JxKegyKngQhBHAHaGZ?pid=Api&P=0&h=180',
       description: 'Snack box dengan berbagai camilan premium'
     },
     {
       id: 'f2',
       name: 'Minuman Energy',
-      price: 25000,
-      imageUrl: 'https://via.placeholder.com/300x300?text=Energy+Drink',
+      price: 45000,
+      imageUrl: 'https://tse4.mm.bing.net/th/id/OIP.HVn4Y-jd529F8yr0bAExQAHaHa?pid=Api&P=0&h=180',
       description: 'Minuman energi untuk tambahan stamina'
     },
     {
       id: 'f3',
-      name: 'Kopi Specialty',
+      name: 'Kopi kenangan',
       price: 45000,
-      imageUrl: 'https://via.placeholder.com/300x300?text=Special+Coffee',
+      imageUrl: 'https://tse4.mm.bing.net/th/id/OIP.qow9zWX997H-0gmjoGdjLwHaFF?pid=Api&P=0&h=180',
       description: 'Kopi specialty dari biji pilihan'
     },
     {
       id: 'f4',
       name: 'Healthy Snack',
       price: 35000,
-      imageUrl: 'https://via.placeholder.com/300x300?text=Healthy+Snack',
+      imageUrl: 'https://tse1.mm.bing.net/th/id/OIP.udqvjCP9uMLO1CXdD5SkRgHaKY?pid=Api&P=0&h=180',
       description: 'Camilan sehat rendah kalori'
     }
   ],
@@ -149,28 +149,28 @@ const productCategories: { [key: string]: Product[] } = {
       id: 'a1',
       name: 'Oli Mobil Synthetic',
       price: 150000,
-      imageUrl: 'https://via.placeholder.com/300x300?text=Engine+Oil',
+      imageUrl: 'https://tse3.mm.bing.net/th/id/OIP.8CJyhl1ctlLmjO21-dEGqAHaHa?pid=Api&P=0&h=180',
       description: 'Oli mobil synthetic untuk performa optimal'
     },
     {
       id: 'a2',
       name: 'Car Vacuum Cleaner',
       price: 280000,
-      imageUrl: 'https://via.placeholder.com/300x300?text=Car+Vacuum',
+      imageUrl: 'https://tse4.mm.bing.net/th/id/OIP.KcXeftYRkSty4rsc1619PwHaHa?pid=Api&P=0&h=180',
       description: 'Vacuum cleaner portable untuk mobil'
     },
     {
       id: 'a3',
       name: 'Car Phone Holder',
       price: 85000,
-      imageUrl: 'https://via.placeholder.com/300x300?text=Phone+Holder',
+      imageUrl: 'https://tse1.mm.bing.net/th/id/OIP._Zwu9YXSy0-Om4sBU6fSiQHaHN?pid=Api&P=0&h=180',
       description: 'Holder smartphone untuk dashboard mobil'
     },
     {
       id: 'a4',
       name: 'Car Perfume',
       price: 65000,
-      imageUrl: 'https://via.placeholder.com/300x300?text=Car+Perfume',
+      imageUrl: 'https://tse3.mm.bing.net/th/id/OIP.bYDMK2ll3FZDkbRC4rQPdQHaHa?pid=Api&P=0&h=180',
       description: 'Pengharum mobil dengan aroma lasting'
     }
   ],
@@ -179,28 +179,28 @@ const productCategories: { [key: string]: Product[] } = {
       id: 'ent1',
       name: 'Headphone Wireless',
       price: 680000,
-      imageUrl: 'https://via.placeholder.com/300x300?text=Headphone',
+      imageUrl: 'https://tse3.mm.bing.net/th/id/OIP.H36jq-sM3m5YFJTDkTFOzwHaHa?pid=Api&P=0&h=180',
       description: 'Headphone wireless dengan sound quality terbaik'
     },
     {
       id: 'ent2',
       name: 'Game Controller',
       price: 320000,
-      imageUrl: 'https://via.placeholder.com/300x300?text=Game+Controller',
+      imageUrl: 'https://tse3.mm.bing.net/th/id/OIP.drMZLp7PCDs8V32aj-ljFAHaHa?pid=Api&P=0&h=180',
       description: 'Controller gaming ergonomis'
     },
     {
       id: 'ent3',
       name: 'Bluetooth Speaker',
       price: 420000,
-      imageUrl: 'https://via.placeholder.com/300x300?text=Bluetooth+Speaker',
+      imageUrl: 'https://tse2.mm.bing.net/th/id/OIP.RQUwkqX4SiNTooGpGz2fSAHaHa?pid=Api&P=0&h=180',
       description: 'Speaker portable dengan bass yang powerful'
     },
     {
       id: 'ent4',
       name: 'VR Headset',
       price: 1850000,
-      imageUrl: 'https://via.placeholder.com/300x300?text=VR+Headset',
+      imageUrl: 'https://tse3.mm.bing.net/th/id/OIP.2zpNNfSSdnoQrlDrHzUCwgHaHa?pid=Api&P=0&h=180',
       description: 'VR headset untuk pengalaman immersive'
     }
   ],
@@ -209,21 +209,21 @@ const productCategories: { [key: string]: Product[] } = {
       id: 'b1',
       name: 'Stroller Premium',
       price: 1500000,
-      imageUrl: 'https://via.placeholder.com/300x300?text=Baby+Stroller',
+      imageUrl: 'https://tse3.mm.bing.net/th/id/OIP.RDVRDeWZ8BAb0fWzdB5ThAHaHa?pid=Api&P=0&h=180',
       description: 'Stroller bayi dengan fitur keamanan lengkap'
     },
     {
       id: 'b2',
       name: 'Baby Monitor',
       price: 450000,
-      imageUrl: 'https://via.placeholder.com/300x300?text=Baby+Monitor',
+      imageUrl: 'https://tse2.mm.bing.net/th/id/OIP.0sn3QuJycMvMsXCw4fqPPgHaHa?pid=Api&P=0&h=180',
       description: 'Monitor bayi dengan camera dan sensor'
     },
     {
       id: 'b3',
       name: 'Mainan Edukasi',
       price: 125000,
-      imageUrl: 'https://via.placeholder.com/300x300?text=Educational+Toy',
+      imageUrl: 'https://tse4.mm.bing.net/th/id/OIP.l6eA1a4gtVzVDy9qwvTrYAHaHa?pid=Api&P=0&h=180',
       description: 'Mainan edukasi untuk perkembangan anak'
     },
     {

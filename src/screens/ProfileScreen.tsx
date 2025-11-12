@@ -1,32 +1,17 @@
 import * as React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
-import { useNavigationState } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { globalStyles } from '../styles/globalStyles';
+import { useRootParams } from '../hooks/useNavigationState';
 
-// Type untuk navigation state
-type RootState = {
-  routes: Array<{
-    params?: {
-      authToken?: string;
-    };
-  }>;
-};
-
-// Custom hook untuk status autentikasi
-const useAuthStatus = () => {
-  const authState = useNavigationState((state) => {
-    const rootState = state as unknown as RootState;
-    return rootState.routes[0]?.params?.authToken || null;
-  });
-  
-  return {
-    isAuthenticated: !!authState,
-    authToken: authState
-  };
-};
+// Type untuk root params
+interface RootParams {
+  userID?: string;
+}
 
 const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated } = useAuthStatus();
+  const rootParams = useRootParams() as RootParams;
+  const isAuthenticated = !!rootParams?.userID;
   
   if (!isAuthenticated) {
     return (
@@ -43,11 +28,12 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 export const ProfileScreen: React.FC = () => {
-  const { isAuthenticated, authToken } = useAuthStatus();
+  const navigation = useNavigation();
+  const rootParams = useRootParams() as RootParams;
+  const userID = rootParams?.userID;
 
   const handleLogin = () => {
-    // Simulasi login
-    console.log('Login clicked');
+    navigation.navigate('Login' as never);
   };
 
   return (
@@ -57,17 +43,17 @@ export const ProfileScreen: React.FC = () => {
       <AuthGuard>
         <View style={styles.profileSection}>
           <Image 
-            source={{ uri: 'https://via.placeholder.com/100x100?text=User' }}
+            source={{ uri: 'https://tse4.mm.bing.net/th/id/OIP.hGSCbXlcOjL_9mmzerqAbQHaHa?pid=Api&P=0&h=180' }}
             style={styles.avatar}
           />
-          <Text style={styles.userName}>Pengguna</Text>
-          <Text style={styles.userEmail}>user@example.com</Text>
+          <Text style={styles.userName}>Pengguna #{userID}</Text>
+          <Text style={styles.userEmail}>user{userID}@example.com</Text>
           <Text style={styles.authStatus}>
-            Status: {isAuthenticated ? 'Terverifikasi' : 'Belum Login'}
+            Status: {userID ? 'Terverifikasi' : 'Belum Login'}
           </Text>
-          {authToken && (
-            <Text style={styles.tokenInfo}>
-              Token: {authToken.substring(0, 10)}...
+          {userID && (
+            <Text style={styles.userId}>
+              User ID: {userID}
             </Text>
           )}
         </View>
@@ -105,7 +91,7 @@ export const ProfileScreen: React.FC = () => {
         </View>
       </AuthGuard>
 
-      {!isAuthenticated && (
+      {!userID && (
         <TouchableOpacity 
           style={[globalStyles.button, globalStyles.buttonPrimary, styles.loginButton]}
           onPress={handleLogin}
@@ -156,10 +142,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 5,
   },
-  tokenInfo: {
+  userId: {
     fontSize: 12,
     color: '#999',
     fontFamily: 'monospace',
+    backgroundColor: '#f5f5f5',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
   },
   menuSection: {
     backgroundColor: '#fff',

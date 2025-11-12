@@ -229,7 +229,7 @@ const handleProductPress = useCallback((product: Product) => {
         />
       </Modal>
 
-      <ProductDetailModal
+      {/* <ProductDetailModal
         product={selectedProduct}
         onClose={() => {
           setDetailModalVisible(false);
@@ -237,7 +237,7 @@ const handleProductPress = useCallback((product: Product) => {
         }}
         visible={detailModalVisible}
         onDelete={handleDeleteProduct}
-      />
+      /> */}
     </View>
   );
 };

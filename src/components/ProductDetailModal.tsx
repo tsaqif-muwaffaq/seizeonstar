@@ -1,99 +1,14 @@
-// import * as React from 'react';
-// import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
-// import { Product } from '../types/Product';
-// import { globalStyles } from '../styles/globalStyles';
-
-// interface ProductDetailModalProps {
-//   product: Product | null;
-//   onClose: () => void;
-// }
-
-// export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, onClose }) => {
-//   if (!product) {
-//     return null;
-//   }
-
-//   return (
-//     <View style={styles.overlay}>
-//       <View style={styles.modalContainer}>
-//         <ScrollView>
-//           <Image source={{ uri: product.imageUrl }} style={styles.image} />
-//           <Text style={styles.name}>{product.name}</Text>
-//           <Text style={styles.price}>Rp {product.price.toLocaleString('id-ID')}</Text>
-//           {product.description ? <Text style={styles.description}>{product.description}</Text> : null}
-
-//           <TouchableOpacity
-//             style={[globalStyles.button, globalStyles.buttonPrimary, styles.closeButton]}
-//             onPress={onClose}
-//           >
-//             <Text style={globalStyles.buttonText}>Tutup</Text>
-//           </TouchableOpacity>
-//         </ScrollView>
-//       </View>
-//     </View>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   overlay: {
-//     flex: 1,
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//     backgroundColor: 'rgba(0,0,0,0.4)',
-//   },
-//   modalContainer: {
-//     width: '90%',
-//     backgroundColor: '#fff',
-//     borderRadius: 12,
-//     padding: 20,
-//     maxHeight: '80%',
-//   },
-//   image: {
-//     width: '100%',
-//     height: 250,
-//     borderRadius: 10,
-//     marginBottom: 15,
-//     resizeMode: 'cover',
-//   },
-//   name: {
-//     fontSize: 22,
-//     fontWeight: 'bold',
-//     marginBottom: 8,
-//   },
-//   price: {
-//     fontSize: 20,
-//     color: '#2196F3',
-//     marginBottom: 12,
-//   },
-//   description: {
-//     fontSize: 16,
-//     color: '#555',
-//     marginBottom: 20,
-//   },
-//   closeButton: {
-//     marginTop: 10,
-//   },
-// });
-
 import * as React from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Image, 
-  ScrollView, 
-  Modal,
-  TouchableWithoutFeedback 
-} from 'react-native';
-import { Product } from '../types/Product';
-import { globalStyles } from '../styles/globalStyles';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Modal } from 'react-native';
+// Asumsikan Product sudah didefinisikan di '../types/Product'
+import { Product } from '../types/Product'; 
+// Asumsikan globalStyles sudah didefinisikan di '../styles/globalStyles'
+import { globalStyles } from '../styles/globalStyles'; 
 
 interface ProductDetailModalProps {
   product: Product | null;
   onClose: () => void;
   visible: boolean;
-  onDelete?: (productId: string) => void; // Tambahkan ini
 }
 
 export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ 
@@ -101,71 +16,51 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   onClose, 
   visible 
 }) => {
-  if (!product || !visible) {
+  if (!product) {
     return null;
   }
 
-  const handleOverlayPress = () => {
-    onClose();
-  };
-
-  const handleModalPress = (event: any) => {
-    // Mencegah event bubbling ke overlay
-    event.stopPropagation();
-  };
-
   return (
     <Modal
-      visible={visible}
+      animationType="fade" // Menggunakan animasi fade lebih elegan
       transparent={true}
-      animationType="fade"
+      visible={visible}
       onRequestClose={onClose}
     >
-      <TouchableWithoutFeedback onPress={handleOverlayPress}>
-        <View style={styles.overlay}>
-          <TouchableWithoutFeedback onPress={handleModalPress}>
-            <View style={styles.modalContainer}>
-              <ScrollView 
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContent}
-              >
-                {/* Product Image */}
-                <Image 
-                  source={{ uri: product.imageUrl }} 
-                  style={styles.image} 
-                 
-                />
-                
-                {/* Product Name */}
-                <Text style={styles.name}>{product.name}</Text>
-                
-                {/* Product Price */}
-                <Text style={styles.price}>Rp {product.price.toLocaleString('id-ID')}</Text>
-                
-                {/* Product Description */}
-                {product.description ? (
-                  <View style={styles.descriptionContainer}>
-                    <Text style={styles.descriptionLabel}>Deskripsi:</Text>
-                    <Text style={styles.description}>{product.description}</Text>
-                  </View>
-                ) : null}
+      <View style={styles.overlay}>
+        <View style={styles.modalContainer}>
+          <ScrollView contentContainerStyle={styles.scrollContent}>
+            <Image 
+              source={{ uri: product.imageUrl }} 
+              style={styles.image} 
+              defaultSource={{ uri: 'https://via.placeholder.com/300x300?text=Produk' }}
+            />
+            
+            <Text style={styles.name}>{product.name}</Text>
+            <Text style={styles.productId}>ID Produk: **{product.id}**</Text>
+            <Text style={styles.price}>Rp {product.price.toLocaleString('id-ID')}</Text>
 
-                {/* Product ID (optional) */}
-                <Text style={styles.productId}>ID: {product.id}</Text>
+            {product.description ? (
+              <View style={styles.descriptionContainer}>
+                <Text style={styles.descriptionLabel}>Deskripsi Produk:</Text>
+                <Text style={styles.description}>{product.description}</Text>
+              </View>
+            ) : (
+              <View style={styles.descriptionContainer}>
+                <Text style={styles.description}>Tidak ada deskripsi tersedia untuk produk ini.</Text>
+              </View>
+            )}
 
-                {/* Close Button */}
-                <TouchableOpacity
-                  style={[globalStyles.button, globalStyles.buttonPrimary, styles.closeButton]}
-                  onPress={onClose}
-                  activeOpacity={0.7}
-                >
-                  <Text style={globalStyles.buttonText}>Tutup</Text>
-                </TouchableOpacity>
-              </ScrollView>
-            </View>
-          </TouchableWithoutFeedback>
+            <TouchableOpacity
+              // Menggunakan globalStyles.buttonPrimary dan styles.closeButton
+              style={[globalStyles.button, globalStyles.buttonPrimary, styles.closeButton]}
+              onPress={onClose}
+            >
+              <Text style={globalStyles.buttonText}>Tutup Detail</Text>
+            </TouchableOpacity>
+          </ScrollView>
         </View>
-      </TouchableWithoutFeedback>
+      </View>
     </Modal>
   );
 };
@@ -175,77 +70,81 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    // Mengubah opacity menjadi sedikit lebih gelap
+    backgroundColor: 'rgba(0,0,0,0.6)', 
     padding: 20,
   },
   modalContainer: {
     width: '100%',
-    maxWidth: 400,
+    maxWidth: 450, // Sedikit diperbesar
     backgroundColor: '#fff',
     borderRadius: 16,
-    padding: 20,
-    maxHeight: '85%',
+    padding: 24, // Padding lebih besar
+    maxHeight: '90%', // Batasan tinggi yang lebih fleksibel
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4, // Shadow lebih dalam
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOpacity: 0.2, // Sedikit lebih transparan
+    shadowRadius: 10, // Shadow lebih blur
+    elevation: 8,
   },
   scrollContent: {
     flexGrow: 1,
   },
   image: {
     width: '100%',
-    height: 280,
+    height: 250, // Tinggi gambar sedikit disesuaikan
     borderRadius: 12,
     marginBottom: 20,
     resizeMode: 'cover',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f0f0f0', // Warna background saat loading
   },
   name: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#333',
-    textAlign: 'center',
+    fontSize: 26, // Ukuran font lebih besar
+    fontWeight: '700', // Lebih tebal
+    marginBottom: 6,
+    color: '#1a1a1a', // Warna teks lebih gelap
+    textAlign: 'left', // Mengubah rata kiri
   },
   price: {
-    fontSize: 22,
-    color: '#2196F3',
-    marginBottom: 16,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontSize: 24, // Ukuran font lebih besar
+    color: '#007AFF', // Warna biru iOS yang profesional
+    marginBottom: 20,
+    fontWeight: '700', // Lebih tebal
+    textAlign: 'left', // Mengubah rata kiri
   },
   descriptionContainer: {
     marginBottom: 20,
     padding: 16,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
+    backgroundColor: '#f7f7f7', // Background deskripsi lebih terang
+    borderRadius: 10, // Sudut sedikit melengkung
+    borderLeftWidth: 4, // Tambahkan garis kiri
+    borderLeftColor: '#007AFF',
   },
   descriptionLabel: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     marginBottom: 8,
     color: '#333',
   },
   description: {
     fontSize: 16,
     color: '#555',
-    lineHeight: 22,
+    lineHeight: 24, // Line height lebih nyaman dibaca
   },
   productId: {
     fontSize: 14,
-    color: '#888',
-    textAlign: 'center',
-    marginBottom: 20,
-    fontStyle: 'italic',
+    color: '#999',
+    textAlign: 'left',
+    marginBottom: 8, // Sedikit dirapatkan
+    fontStyle: 'normal', // Menghapus italic
   },
   closeButton: {
-    marginTop: 10,
-    marginHorizontal: 10,
+    marginTop: 20, // Jarak lebih besar dari deskripsi
+    marginHorizontal: 0, // Hapus margin horizontal
+    backgroundColor: '#007AFF', // Ubah warna tombol
   },
 });
 
