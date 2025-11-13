@@ -1,52 +1,42 @@
 import * as React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
-// Pastikan import ini sesuai dengan yang Anda gunakan
 import { 
-  DrawerContentScrollView, 
-  DrawerItemList, 
-  DrawerContentComponentProps 
-} from '@react-navigation/drawer'; 
-import { useNavigation } from '@react-navigation/native';
+  View, 
+  Text, 
+  StyleSheet, 
+  TouchableOpacity, 
+  Image 
+} from 'react-native';
+import { DrawerContentScrollView } from '@react-navigation/drawer';
 
-// Ganti 'any' dengan tipe data navigasi yang benar jika Anda menggunakannya
-type CustomDrawerContentProps = DrawerContentComponentProps; 
+interface CustomDrawerContentProps {
+  navigation: any;
+}
 
 export const CustomDrawerContent: React.FC<CustomDrawerContentProps> = (props) => {
-  const navigation = useNavigation();
-
-  // Data user simulasi
   const user = {
     name: 'John Doe',
-    avatar: 'https://tse4.mm.bing.net/th/id/OIP.hGSCbXlcOjL_9mmzerqAbQHaHa?pid=Api&P=0&h=180',
+    avatar: 'https://via.placeholder.com/100x100?text=User',
     email: 'john.doe@example.com'
   };
 
   const handleLogout = () => {
-    // Logika logout Anda
     props.navigation.closeDrawer();
     console.log('User logged out');
-    // Tambahkan navigasi ke Login Screen jika ada:
-    // navigation.navigate('Login'); 
   };
 
-  // Contoh item menu tambahan yang ingin di-customize
-  const customMenuItems = [
-    { label: 'Tentang Aplikasi', target: 'About' },
-    { label: 'Pengaturan Akun', target: 'Settings' },
+  const menuItems = [
+    { name: 'Home', label: 'Home' },
+    { name: 'ProductList', label: 'Daftar Produk' },
+    { name: 'Cart', label: 'Keranjang' },
+    { name: 'Analytics', label: 'Analytics' },
+    { name: 'Settings', label: 'Settings' },
   ];
-
-  const navigateToScreen = (screenName: string) => {
-    props.navigation.closeDrawer();
-    // Gunakan fungsi navigate, asumsikan 'About' dan 'Settings' ada di RootStack
-    // Perlu disesuaikan dengan navigasi yang ada di app Anda
-    // navigation.navigate(screenName as any);
-    console.log(`Navigasi ke: ${screenName}`);
-  };
 
   return (
     <DrawerContentScrollView 
       {...props} 
       contentContainerStyle={styles.container}
+      showsVerticalScrollIndicator={false}
     >
       {/* User Profile Section */}
       <View style={styles.userSection}>
@@ -58,24 +48,22 @@ export const CustomDrawerContent: React.FC<CustomDrawerContentProps> = (props) =
         <Text style={styles.userEmail}>{user.email}</Text>
       </View>
 
-      {/* Item List Bawaan Drawer (Home, dll.) */}
-      <DrawerItemList {...props} />
-      
+      {/* Menu Items */}
+      {menuItems.map((item) => (
+        <TouchableOpacity
+          key={item.name}
+          style={styles.menuItem}
+          onPress={() => {
+            props.navigation.navigate(item.name);
+            props.navigation.closeDrawer();
+          }}
+        >
+          <Text style={styles.menuText}>{item.label}</Text>
+        </TouchableOpacity>
+      ))}
+
       {/* Divider */}
       <View style={styles.divider} />
-
-      {/* Custom Menu Items */}
-      <ScrollView>
-        {customMenuItems.map((item) => (
-          <TouchableOpacity
-            key={item.target}
-            style={styles.menuItem}
-            onPress={() => navigateToScreen(item.target)}
-          >
-            <Text style={styles.menuText}>{item.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
 
       {/* Logout Button */}
       <TouchableOpacity
@@ -92,7 +80,6 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     paddingTop: 50,
-    backgroundColor: '#fff', // Pastikan background putih
   },
   userSection: {
     alignItems: 'center',
@@ -100,39 +87,37 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 25,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0', // Border lebih halus
-    backgroundColor: '#f8f9fa', // Background section profil
+    borderBottomColor: '#e0e0e0',
   },
   avatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
     marginBottom: 12,
-    borderWidth: 2, // Tambahkan border
-    borderColor: '#007AFF', // Warna border biru
   },
   userName: {
     fontSize: 18,
-    fontWeight: '700', // Lebih tebal
+    fontWeight: 'bold',
     marginBottom: 4,
     color: '#333',
   },
   userEmail: {
     fontSize: 14,
-    color: '#6c757d', // Warna teks lebih netral
+    color: '#666',
   },
   menuItem: {
-    paddingVertical: 18, // Padding lebih besar
+    paddingVertical: 16,
     paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f5f5f5',
   },
   menuText: {
     fontSize: 16,
     color: '#333',
-    fontWeight: '500', // Sedikit lebih tebal
   },
   divider: {
     height: 1,
-    backgroundColor: '#e9ecef', // Warna divider lebih lembut
+    backgroundColor: '#e0e0e0',
     marginVertical: 20,
     marginHorizontal: 20,
   },
@@ -140,14 +125,14 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     marginHorizontal: 20,
     alignItems: 'center',
-    backgroundColor: '#ffe5e5', // Background tombol logout yang lembut
-    borderRadius: 10, // Sudut lebih melengkung
-    marginTop: 'auto', // Dorong ke bawah
+    backgroundColor: '#f8f8f8',
+    borderRadius: 8,
+    marginTop: 'auto',
     marginBottom: 30,
   },
   logoutText: {
     fontSize: 16,
-    color: '#dc3545', // Warna merah yang lebih standar
-    fontWeight: '700',
+    color: '#E53935',
+    fontWeight: '600',
   },
 });

@@ -4,6 +4,8 @@ import { useNavigationState } from '@react-navigation/native';
 import TabNavigator from './TabNavigator';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { AnalyticsScreen } from '../screens/AnalyticsScreen';
+import { ProductListScreen } from '../screens/ProductListScreen';
+import { CartScreen } from '../screens/CartScreen';
 import { CustomDrawerContent } from '../components/CustomDrawerContent';
 import { useCurrentRoute } from '../hooks/useNavigationState';
 
@@ -24,7 +26,7 @@ export const DrawerNavigator: React.FC = () => {
       drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={{
         drawerType: 'front',
-        headerShown: false, // 🔥 MATIKAN HEADER DI DRAWER - biar Stack yang handle
+        headerShown: false,
         swipeEnabled: getSwipeEnabled(),
       }}
     >
@@ -33,6 +35,22 @@ export const DrawerNavigator: React.FC = () => {
         component={TabNavigator}
         options={{ 
           title: 'Home',
+          swipeEnabled: getSwipeEnabled(),
+        }}
+      />
+      <Drawer.Screen
+        name="ProductList"
+        component={ProductListScreen}
+        options={{
+          title: 'Daftar Produk',
+          swipeEnabled: getSwipeEnabled(),
+        }}
+      />
+      <Drawer.Screen
+        name="Cart"
+        component={CartScreen}
+        options={{
+          title: 'Keranjang',
           swipeEnabled: getSwipeEnabled(),
         }}
       />

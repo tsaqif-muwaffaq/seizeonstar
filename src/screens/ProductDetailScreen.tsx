@@ -6,56 +6,68 @@ import {
   Image, 
   ScrollView, 
   TouchableOpacity,
-  Alert 
+  Alert,
+  useWindowDimensions 
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackActions } from '@react-navigation/native';
-import { Product } from '../types/Product';
+import { LegacyProduct, getProductName, getProductImageUrl, getProductPrice, getProductDescription } from '../types/Product';
+import { RootStackParamList } from '../types/NavigationTypes';
 import { globalStyles } from '../styles/globalStyles';
 
-type RootStackParamList = {
-  ProductDetail: { product: Product };
-};
-
-type ProductDetailRouteProp = RouteProp<RootStackParamList, 'ProductDetail'>;
+type ProductDetailScreenRouteProp = RouteProp<RootStackParamList, 'ProductDetail'>;
 
 export const ProductDetailScreen: React.FC = () => {
-  const navigation = useNavigation();
-  const route = useRoute<ProductDetailRouteProp>();
+  const navigation = useNavigation<any>();
+  const route = useRoute<ProductDetailScreenRouteProp>();
   const { product } = route.params;
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
+
+  // Gunakan helper functions
+  const productName = getProductName(product);
+  const productImageUrl = getProductImageUrl(product);
+  const productPrice = getProductPrice(product);
+  const productDescription = getProductDescription(product);
 
   // Soal Praktik 3: Reset Stack dan Tutup Drawer
   const handleResetStackAndCloseDrawer = () => {
     // Reset stack ke root
     navigation.dispatch(StackActions.popToTop());
-    
-    // Untuk menutup drawer, kita bisa navigate ke screen yang sama dengan Drawer
-    // atau menggunakan approach yang lebih sederhana
     Alert.alert('Sukses', 'Stack telah direset ke halaman utama');
   };
 
   // Soal Praktik 4: Kembali ke Drawer Home
   const handleBackToDrawerHome = () => {
     // Navigate ke Home screen yang ada di Drawer
-    navigation.navigate('Home' as never);
+    navigation.navigate('Home');
+  };
+
+  // Soal: Implementasi Modal untuk Checkout
+  const handleCheckout = () => {
+    navigation.navigate('Checkout', { product });
   };
 
   return (
     <ScrollView style={styles.container}>
       <Image 
-        source={{ uri: product.imageUrl }} 
-        style={styles.image}
+        source={{ uri: productImageUrl }} 
+        style={[styles.image, { height: isLandscape ? 200 : 300 }]}
         resizeMode="cover"
       />
       
       <View style={styles.content}>
-        <Text style={styles.name}>{product.name}</Text>
-        <Text style={styles.price}>Rp {product.price.toLocaleString('id-ID')}</Text>
+        <Text style={[styles.name, { fontSize: isLandscape ? 20 : 24 }]}>{productName}</Text>
+        <Text style={[styles.price, { fontSize: isLandscape ? 18 : 20 }]}>
+          Rp {productPrice.toLocaleString('id-ID')}
+        </Text>
         
-        {product.description && (
+        {productDescription && (
           <View style={styles.descriptionSection}>
             <Text style={styles.sectionTitle}>Deskripsi</Text>
-            <Text style={styles.description}>{product.description}</Text>
+            <Text style={[styles.description, { fontSize: isLandscape ? 14 : 16 }]}>
+              {productDescription}
+            </Text>
           </View>
         )}
 
@@ -65,6 +77,14 @@ export const ProductDetailScreen: React.FC = () => {
           <Text style={styles.infoText}>Kategori: Fashion</Text>
           <Text style={styles.infoText}>Stok: Tersedia</Text>
         </View>
+
+        {/* Tombol Checkout */}
+        <TouchableOpacity
+          style={[globalStyles.button, styles.checkoutButton]}
+          onPress={handleCheckout}
+        >
+          <Text style={globalStyles.buttonText}>🛒 Checkout Sekarang</Text>
+        </TouchableOpacity>
 
         {/* Soal Praktik 3: Tombol Reset Stack */}
         <TouchableOpacity
@@ -101,19 +121,16 @@ const styles = StyleSheet.create({
   },
   image: {
     width: '100%',
-    height: 300,
   },
   content: {
     padding: 20,
   },
   name: {
-    fontSize: 24,
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 8,
   },
   price: {
-    fontSize: 20,
     color: '#2196F3',
     fontWeight: '600',
     marginBottom: 20,
@@ -136,7 +153,6 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   description: {
-    fontSize: 16,
     color: '#666',
     lineHeight: 22,
   },
@@ -156,12 +172,16 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 4,
   },
+  checkoutButton: {
+    backgroundColor: '#4CAF50',
+    marginBottom: 10,
+  },
   resetButton: {
     backgroundColor: '#FF9800',
     marginBottom: 10,
   },
   backButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#2196F3',
     marginBottom: 10,
   },
 });

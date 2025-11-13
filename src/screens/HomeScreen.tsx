@@ -68,9 +68,9 @@ const handleProductPress = useCallback((product: Product) => {
           text: 'Hapus',
           style: 'destructive',
           onPress: () => {
-            setProducts(prev => prev.filter(product => product.id !== productId));
-            productCategories['Semua'] = productCategories['Semua'].filter(product => product.id !== productId);
-            if (selectedProduct?.id === productId) {
+            setProducts(prev => prev.filter(product => product.id !== product.id));
+            productCategories['Semua'] = productCategories['Semua'].filter(product => product.id !== product.id);
+            if (selectedProduct?.id === selectedProduct?.id) {
               setDetailModalVisible(false);
               setSelectedProduct(null);
             }

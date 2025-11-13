@@ -1,35 +1,30 @@
-import { Product } from './Product';
-
-export type RootDrawerParamList = {
-  Home: { userID?: string };
-  Settings: undefined;
-  Profile: undefined;
-};
+import { LegacyProduct } from './Product';
 
 export type RootStackParamList = {
+  Login: undefined;
   Onboarding1: undefined;
   Onboarding2: undefined;
   MainApp: undefined;
-  ProductDetail: { product: Product };
+  ProductDetail: { product: LegacyProduct };
+  Checkout: { product: LegacyProduct };
   ExtendedTabs: undefined;
-  Checkout: { product: Product };
   Analytics: undefined;
-  Login: undefined;
+  ProductList: undefined;
+  Cart: undefined;
+};
+
+export type DrawerParamList = {
+  Home: undefined;
+  ProductList: undefined;
+  Cart: undefined;
+  Settings: undefined;
+  Analytics: undefined;
 };
 
 export type BottomTabParamList = {
   HomeTab: undefined;
-  ProfileTab: undefined;
+  ProductListTab: undefined;
+  CartTab: undefined;
   AnalyticsTab: undefined;
-};
-
-export type TopTabParamList = {
-  Populer: undefined;
-  Terbaru: undefined;
-  Elektronik: undefined;
-  Pakaian: undefined;
-  Makanan: undefined;
-  Otomotif: undefined;
-  Hiburan: undefined;
-  Bayi: undefined;
+  ProfileTab: undefined;
 };

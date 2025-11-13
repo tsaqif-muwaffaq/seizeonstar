@@ -4,6 +4,8 @@ import { View, Text, StyleSheet } from 'react-native';
 import { HomeScreen } from '../screens/HomeScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { AnalyticsScreen } from '../screens/AnalyticsScreen';
+import { ProductListScreen } from '../screens/ProductListScreen';
+import { CartScreen } from '../screens/CartScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -12,8 +14,10 @@ const TabIcon: React.FC<{ focused: boolean; name: string }> = ({ focused, name }
   const getIcon = () => {
     switch (name) {
       case 'Katalog': return '🏠';
-      case 'Profil': return '👤';
+      case 'Produk': return '📦';
+      case 'Keranjang': return '🛒';
       case 'Analytics': return '📊';
+      case 'Profil': return '👤';
       default: return '🔍';
     }
   };
@@ -33,14 +37,16 @@ const TabNavigator = () => {
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused }) => {
           let label = 'Katalog';
-          if (route.name === 'ProfileTab') label = 'Profil';
+          if (route.name === 'ProductListTab') label = 'Produk';
+          if (route.name === 'CartTab') label = 'Keranjang';
           if (route.name === 'AnalyticsTab') label = 'Analytics';
+          if (route.name === 'ProfileTab') label = 'Profil';
 
           return <TabIcon focused={focused} name={label} />;
         },
         tabBarActiveTintColor: '#2196F3',
         tabBarInactiveTintColor: 'gray',
-        headerShown: false, // 🔥 MATIKAN HEADER DI TAB NAVIGATOR
+        headerShown: false,
       })}
     >
       <Tab.Screen 
@@ -51,10 +57,17 @@ const TabNavigator = () => {
         }}
       />
       <Tab.Screen 
-        name="ProfileTab" 
-        component={ProfileScreen}
+        name="ProductListTab" 
+        component={ProductListScreen}
         options={{
-          tabBarLabel: 'Profil',
+          tabBarLabel: 'Produk',
+        }}
+      />
+      <Tab.Screen 
+        name="CartTab" 
+        component={CartScreen}
+        options={{
+          tabBarLabel: 'Keranjang',
         }}
       />
       <Tab.Screen 
@@ -62,6 +75,13 @@ const TabNavigator = () => {
         component={AnalyticsScreen}
         options={{
           tabBarLabel: 'Analytics',
+        }}
+      />
+      <Tab.Screen 
+        name="ProfileTab" 
+        component={ProfileScreen}
+        options={{
+          tabBarLabel: 'Profil',
         }}
       />
     </Tab.Navigator>

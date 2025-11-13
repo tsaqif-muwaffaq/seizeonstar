@@ -8,6 +8,8 @@ import { ExtendedHomeTabs } from '../components/ExtendedHomeTabs';
 import { CheckoutScreen } from '../screens/CheckoutScreen';
 import { AnalyticsScreen } from '../screens/AnalyticsScreen';
 import { LoginScreen } from '../screens/LoginScreen';
+import { ProductListScreen } from '../screens/ProductListScreen';
+import { CartScreen } from '../screens/CartScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -37,7 +39,7 @@ const StackNavigator = () => {
         name="Checkout" 
         component={CheckoutScreen}
         options={{
-          headerShown: false, // Full screen modal
+          headerShown: false,
           presentation: 'modal',
         }}
       />
@@ -62,6 +64,36 @@ const StackNavigator = () => {
         options={{
           headerShown: true,
           title: 'Analytics',
+          headerStyle: {
+            backgroundColor: '#f9f9f9',
+          },
+          headerTintColor: '#333',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+        }}
+      />
+      <Stack.Screen 
+        name="ProductList" 
+        component={ProductListScreen}
+        options={{
+          headerShown: true,
+          title: 'Daftar Produk',
+          headerStyle: {
+            backgroundColor: '#f9f9f9',
+          },
+          headerTintColor: '#333',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+        }}
+      />
+      <Stack.Screen 
+        name="Cart" 
+        component={CartScreen}
+        options={{
+          headerShown: true,
+          title: 'Keranjang Belanja',
           headerStyle: {
             backgroundColor: '#f9f9f9',
           },
