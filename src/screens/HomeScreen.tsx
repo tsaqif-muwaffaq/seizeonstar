@@ -15,7 +15,7 @@ import {
   ScrollView
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Product } from '../types/Product';
+import { LegacyProduct, AnyProduct, getProductId, getProductName, getProductImageUrl, getProductDescription, getProductPrice } from '../types/Product';
 import { initialProducts } from '../data/products';
 import { AddProductModal } from '../components/AddProductModal';
 import { ProductDetailModal } from '../components/ProductDetailModal';
@@ -23,7 +23,7 @@ import { globalStyles } from '../styles/globalStyles';
 import { ExtendedHomeTabs } from '../components/ExtendedHomeTabs';
 
 // Data produk untuk semua kategori
-const productCategories: { [key: string]: Product[] } = {
+const productCategories: { [key: string]: AnyProduct[] } = {
   'Semua': initialProducts,
   'Populer': initialProducts.slice(0, 3),
   'Terbaru': initialProducts.slice(3, 6),
@@ -35,25 +35,24 @@ interface HomeScreenProps {
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [products, setProducts] = useState<AnyProduct[]>(initialProducts);
   const [addModalVisible, setAddModalVisible] = useState<boolean>(false);
   const [detailModalVisible, setDetailModalVisible] = useState<boolean>(false);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<AnyProduct | null>(null);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
   const { width, height } = useWindowDimensions();
 
-  const handleAddProduct = useCallback((newProduct: Product) => {
+  const handleAddProduct = useCallback((newProduct: LegacyProduct) => {
     setProducts(prev => [newProduct, ...prev]);
     productCategories['Semua'] = [newProduct, ...productCategories['Semua']];
     setAddModalVisible(false);
   }, []);
 
   // Soal Praktik 2: Navigasi ke Stack Detail
- // Di dalam HomeScreen, perbarui function handleProductPress:
-const handleProductPress = useCallback((product: Product) => {
-  navigation.navigate('ProductDetail' as never, { product } as never);
-}, [navigation]);
+  const handleProductPress = useCallback((product: AnyProduct) => {
+    navigation.navigate('ProductDetail' as never, { product } as never);
+  }, [navigation]);
 
   const handleDeleteProduct = useCallback((productId: string) => {
     Alert.alert(
@@ -68,9 +67,9 @@ const handleProductPress = useCallback((product: Product) => {
           text: 'Hapus',
           style: 'destructive',
           onPress: () => {
-            setProducts(prev => prev.filter(product => product.id !== product.id));
-            productCategories['Semua'] = productCategories['Semua'].filter(product => product.id !== product.id);
-            if (selectedProduct?.id === selectedProduct?.id) {
+            setProducts(prev => prev.filter(product => getProductId(product) !== productId));
+            productCategories['Semua'] = productCategories['Semua'].filter(product => getProductId(product) !== productId);
+            if (selectedProduct && getProductId(selectedProduct) === productId) {
               setDetailModalVisible(false);
               setSelectedProduct(null);
             }
@@ -94,7 +93,7 @@ const handleProductPress = useCallback((product: Product) => {
 
   const filteredProducts = productCategories[selectedCategory] || products;
 
-  const renderProductItem = useCallback(({ item }: { item: Product }) => (
+  const renderProductItem = useCallback(({ item }: { item: AnyProduct }) => (
     <TouchableOpacity 
       onPress={() => handleProductPress(item)} 
       style={[
@@ -104,21 +103,21 @@ const handleProductPress = useCallback((product: Product) => {
       activeOpacity={0.7}
     >
       <Image 
-        source={{ uri: item.imageUrl }} 
+        source={{ uri: getProductImageUrl(item) }} 
         style={styles.image} 
       />
 
       <View style={styles.productInfo}>
-        <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
-        <Text style={styles.price}>Rp {item.price.toLocaleString('id-ID')}</Text>
-        {item.description ? (
-          <Text style={styles.desc} numberOfLines={2}>{item.description}</Text>
+        <Text style={styles.name} numberOfLines={2}>{getProductName(item)}</Text>
+        <Text style={styles.price}>Rp {getProductPrice(item).toLocaleString('id-ID')}</Text>
+        {getProductDescription(item) ? (
+          <Text style={styles.desc} numberOfLines={2}>{getProductDescription(item)}</Text>
         ) : null}
       </View>
     </TouchableOpacity>
   ), [isLandscape, numColumns, handleProductPress]);
 
-  const getProductKey = useCallback((item: Product) => item.id, []);
+  const getProductKey = useCallback((item: AnyProduct) => getProductId(item), []);
 
   const renderCategoryChip = useCallback((category: string) => (
     <TouchableOpacity

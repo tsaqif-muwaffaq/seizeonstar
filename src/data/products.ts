@@ -1,7 +1,6 @@
-import { Product } from '../types/Product';
-import { globalStyles } from '../styles/globalStyles';
+import { LegacyProduct } from '../types/Product';
 
-export const initialProducts: Product[] = [
+export const initialProducts: LegacyProduct[] = [
   {
     id: '1',
     name: 'chambre de lavain',

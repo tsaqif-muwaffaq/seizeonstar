@@ -12,7 +12,6 @@ export interface Product {
   images: string[];
 }
 
-// Untuk kompatibilitas dengan kode lama
 export interface LegacyProduct {
   id: string;
   name: string;
@@ -21,10 +20,8 @@ export interface LegacyProduct {
   description?: string;
 }
 
-// Union type untuk menerima kedua format
 export type AnyProduct = Product | LegacyProduct;
 
-// Helper functions untuk kompatibilitas
 export const getProductId = (product: AnyProduct): string => {
   return typeof product.id === 'number' ? product.id.toString() : product.id;
 };
@@ -38,9 +35,28 @@ export const getProductImageUrl = (product: AnyProduct): string => {
 };
 
 export const getProductDescription = (product: AnyProduct): string => {
-  return product.description || '';
+  if ('description' in product && product.description) {
+    return product.description;
+  }
+  return 'description' in product ? product.description || '' : '';
 };
 
 export const getProductPrice = (product: AnyProduct): number => {
   return product.price;
 };
+
+export const isLegacyProduct = (product: AnyProduct): product is LegacyProduct => {
+  return 'name' in product && 'imageUrl' in product;
+};
+
+export interface ApiError {
+  message: string;
+  status?: number;
+  code?: string;
+  fieldErrors?: Record<string, string>;
+}
+
+export interface NetworkState {
+  isConnected: boolean;
+  isInternetReachable: boolean;
+}

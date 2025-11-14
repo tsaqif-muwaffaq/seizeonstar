@@ -1,10 +1,10 @@
 import * as React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { Product } from '../types/Product';
+import { AnyProduct, getProductName, getProductImageUrl, getProductPrice } from '../types/Product';
 import { globalStyles } from '../styles/globalStyles';
 
-type CheckoutRouteProp = RouteProp<{ Checkout: { product: Product } }, 'Checkout'>;
+type CheckoutRouteProp = RouteProp<{ Checkout: { product: AnyProduct } }, 'Checkout'>;
 
 export const CheckoutScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -16,6 +16,10 @@ export const CheckoutScreen: React.FC = () => {
     navigation.goBack();
   };
 
+  const productName = getProductName(product);
+  const productImageUrl = getProductImageUrl(product);
+  const productPrice = getProductPrice(product);
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -26,10 +30,10 @@ export const CheckoutScreen: React.FC = () => {
         <View style={styles.productSection}>
           <Text style={styles.sectionTitle}>Produk Dipesan</Text>
           <View style={styles.productCard}>
-            <Image source={{ uri: product.imageUrl }} style={styles.productImage} />
+            <Image source={{ uri: productImageUrl }} style={styles.productImage} />
             <View style={styles.productInfo}>
-              <Text style={styles.productName}>{product.name}</Text>
-              <Text style={styles.productPrice}>Rp {product.price.toLocaleString('id-ID')}</Text>
+              <Text style={styles.productName}>{productName}</Text>
+              <Text style={styles.productPrice}>Rp {productPrice.toLocaleString('id-ID')}</Text>
             </View>
           </View>
         </View>
@@ -56,7 +60,7 @@ export const CheckoutScreen: React.FC = () => {
           <View style={styles.summaryCard}>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Subtotal</Text>
-              <Text style={styles.summaryValue}>Rp {product.price.toLocaleString('id-ID')}</Text>
+              <Text style={styles.summaryValue}>Rp {productPrice.toLocaleString('id-ID')}</Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Ongkir</Text>
@@ -65,7 +69,7 @@ export const CheckoutScreen: React.FC = () => {
             <View style={[styles.summaryRow, styles.totalRow]}>
               <Text style={styles.totalLabel}>Total</Text>
               <Text style={styles.totalValue}>
-                Rp {(product.price + 15000).toLocaleString('id-ID')}
+                Rp {(productPrice + 15000).toLocaleString('id-ID')}
               </Text>
             </View>
           </View>

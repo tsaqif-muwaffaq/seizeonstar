@@ -1,12 +1,12 @@
 import * as React from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Product } from '../types/Product';
+import { AnyProduct, getProductId, getProductName, getProductImageUrl, getProductDescription, getProductPrice } from '../types/Product';
 
 interface ResponsiveProductGridProps {
-  products: Product[];
+  products: AnyProduct[];
   categoryName: string;
-  onProductPress: (product: Product) => void;
+  onProductPress: (product: AnyProduct) => void;
 }
 
 export const ResponsiveProductGrid: React.FC<ResponsiveProductGridProps> = ({
@@ -27,7 +27,7 @@ export const ResponsiveProductGrid: React.FC<ResponsiveProductGridProps> = ({
     desc: isLandscape ? 10 : 11,
   };
 
-  const renderProductItem = ({ item }: { item: Product }) => (
+  const renderProductItem = ({ item }: { item: AnyProduct }) => (
     <TouchableOpacity 
       style={[
         styles.productCard, 
@@ -40,20 +40,20 @@ export const ResponsiveProductGrid: React.FC<ResponsiveProductGridProps> = ({
       onPress={() => onProductPress(item)}
     >
       <Image 
-        source={{ uri: item.imageUrl }} 
+        source={{ uri: getProductImageUrl(item) }} 
         style={[styles.productImage, { height: imageHeight }]} 
         resizeMode="cover"
       />
       <View style={styles.productInfo}>
         <Text style={[styles.productName, { fontSize: fontSize.name }]} numberOfLines={2}>
-          {item.name}
+          {getProductName(item)}
         </Text>
         <Text style={[styles.productPrice, { fontSize: fontSize.price }]}>
-          Rp {item.price.toLocaleString('id-ID')}
+          Rp {getProductPrice(item).toLocaleString('id-ID')}
         </Text>
-        {item.description ? (
+        {getProductDescription(item) ? (
           <Text style={[styles.productDesc, { fontSize: fontSize.desc }]} numberOfLines={2}>
-            {item.description}
+            {getProductDescription(item)}
           </Text>
         ) : null}
       </View>
@@ -74,7 +74,7 @@ export const ResponsiveProductGrid: React.FC<ResponsiveProductGridProps> = ({
       <FlatList
         data={products}
         renderItem={renderProductItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={getProductId}
         contentContainerStyle={styles.productsList}
         numColumns={numColumns}
         key={`flatlist-${numColumns}-${isLandscape ? 'landscape' : 'portrait'}`}

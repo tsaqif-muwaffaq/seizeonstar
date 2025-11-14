@@ -2,12 +2,12 @@ import * as React from 'react';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Product } from '../types/Product';
+import { LegacyProduct, getProductId, getProductName, getProductImageUrl, getProductDescription, getProductPrice } from '../types/Product';
 
 const TopTab = createMaterialTopTabNavigator();
 
 // Data produk untuk setiap kategori
-const productCategories: { [key: string]: Product[] } = {
+const productCategories: { [key: string]: LegacyProduct[] } = {
   'Populer': [
     {
       id: '1',
@@ -238,22 +238,22 @@ const productCategories: { [key: string]: Product[] } = {
 
 // Type untuk navigation
 type ExtendedTabsNavigationProp = {
-  navigate: (screen: string, params?: { product: Product }) => void;
+  navigate: (screen: string, params?: { product: LegacyProduct }) => void;
 };
 
 // Komponen untuk menampilkan produk dalam grid
-const ProductGrid = ({ products, categoryName }: { products: Product[], categoryName: string }) => {
+const ProductGrid = ({ products, categoryName }: { products: LegacyProduct[], categoryName: string }) => {
   const navigation = useNavigation<ExtendedTabsNavigationProp>();
   const { width } = useWindowDimensions();
   const isLandscape = width > 600;
   const numColumns = isLandscape ? 3 : 2;
 
   // Soal Praktik 2: Navigasi ke Stack Detail
-  const handleProductPress = (product: Product) => {
+  const handleProductPress = (product: LegacyProduct) => {
     navigation.navigate('ProductDetail', { product });
   };
 
-  const renderProductItem = ({ item }: { item: Product }) => (
+  const renderProductItem = ({ item }: { item: LegacyProduct }) => (
     <TouchableOpacity 
       style={[
         styles.productCard, 

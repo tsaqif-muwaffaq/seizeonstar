@@ -1,15 +1,13 @@
-// import React, { useState } from 'react';
 import * as React from 'react';
 import { useState } from 'react';
-
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
-import { Product } from '../types/Product';
+import { LegacyProduct } from '../types/Product';
 import { globalStyles } from '../styles/globalStyles';
 
 interface AddProductModalProps {
-  onAdd: (product: Product) => void;
+  onAdd: (product: LegacyProduct) => void;
   onClose: () => void;
-  visible: boolean; // Tambahkan ini
+  visible: boolean;
 }
 
 export const AddProductModal: React.FC<AddProductModalProps> = ({ onAdd, onClose }) => {
@@ -35,12 +33,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onAdd, onClose
       return;
     }
 
-    // if (!validateImageUrl(imageUrl)) {
-    //   Alert.alert('Error', 'URL gambar tidak valid. Harus diawali http/https dan berekstensi .jpg/.png/.jpeg/.gif');
-    //   return;
-    // }
-
-    const newProduct: Product = {
+    const newProduct: LegacyProduct = {
       id: Date.now().toString(),
       name: name.trim(),
       price: priceValue,
@@ -103,9 +96,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onAdd, onClose
 
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={[globalStyles.button, globalStyles.buttonPrimary]} onPress={handleSubmit}>
-  <Text style={globalStyles.buttonText}>Tambah</Text>
-</TouchableOpacity>
-
+              <Text style={globalStyles.buttonText}>Tambah</Text>
+            </TouchableOpacity>
 
             <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onClose}>
               <Text style={styles.buttonText}>Batal</Text>
