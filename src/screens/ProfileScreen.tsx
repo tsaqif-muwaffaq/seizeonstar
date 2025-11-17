@@ -1,17 +1,11 @@
 import * as React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { globalStyles } from '../styles/globalStyles';
-import { useRootParams } from '../hooks/useNavigationState';
-
-// Type untuk root params
-interface RootParams {
-  userID?: string;
-}
+import { useAuthContext } from '../context/AuthContext';
 
 const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const rootParams = useRootParams() as RootParams;
-  const isAuthenticated = !!rootParams?.userID;
+  const { isAuthenticated } = useAuthContext();
   
   if (!isAuthenticated) {
     return (
@@ -29,11 +23,35 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 export const ProfileScreen: React.FC = () => {
   const navigation = useNavigation();
-  const rootParams = useRootParams() as RootParams;
-  const userID = rootParams?.userID;
+  const { user, isAuthenticated, logout } = useAuthContext();
 
   const handleLogin = () => {
     navigation.navigate('Login' as never);
+  };
+
+  const handleLogout = async () => {
+    Alert.alert(
+      'Konfirmasi Logout',
+      'Apakah Anda yakin ingin logout?',
+      [
+        {
+          text: 'Batal',
+          style: 'cancel',
+        },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await logout();
+              Alert.alert('Sukses', 'Anda telah logout');
+            } catch (error) {
+              Alert.alert('Error', 'Gagal logout');
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -43,17 +61,19 @@ export const ProfileScreen: React.FC = () => {
       <AuthGuard>
         <View style={styles.profileSection}>
           <Image 
-            source={{ uri: 'https://tse4.mm.bing.net/th/id/OIP.hGSCbXlcOjL_9mmzerqAbQHaHa?pid=Api&P=0&h=180' }}
+            source={{ uri: user?.image || 'https://tse4.mm.bing.net/th/id/OIP.hGSCbXlcOjL_9mmzerqAbQHaHa?pid=Api&P=0&h=180' }}
             style={styles.avatar}
           />
-          <Text style={styles.userName}>Pengguna #{userID}</Text>
-          <Text style={styles.userEmail}>user{userID}@example.com</Text>
-          <Text style={styles.authStatus}>
-            Status: {userID ? 'Terverifikasi' : 'Belum Login'}
+          <Text style={styles.userName}>
+            {user ? `${user.firstName} ${user.lastName}` : 'Pengguna'}
           </Text>
-          {userID && (
+          <Text style={styles.userEmail}>{user?.email || 'user@example.com'}</Text>
+          <Text style={styles.authStatus}>
+            Status: {isAuthenticated ? 'Terverifikasi' : 'Belum Login'}
+          </Text>
+          {user?.id && (
             <Text style={styles.userId}>
-              User ID: {userID}
+              User ID: {user.id}
             </Text>
           )}
         </View>
@@ -91,18 +111,21 @@ export const ProfileScreen: React.FC = () => {
         </View>
       </AuthGuard>
 
-      {!userID && (
+      {!isAuthenticated ? (
         <TouchableOpacity 
           style={[globalStyles.button, globalStyles.buttonPrimary, styles.loginButton]}
           onPress={handleLogin}
         >
           <Text style={globalStyles.buttonText}>Login</Text>
         </TouchableOpacity>
+      ) : (
+        <TouchableOpacity 
+          style={[globalStyles.button, globalStyles.buttonDanger, styles.logoutButton]}
+          onPress={handleLogout}
+        >
+          <Text style={globalStyles.buttonText}>Keluar</Text>
+        </TouchableOpacity>
       )}
-
-      <TouchableOpacity style={[globalStyles.button, globalStyles.buttonDanger, styles.logoutButton]}>
-        <Text style={globalStyles.buttonText}>Keluar</Text>
-      </TouchableOpacity>
     </ScrollView>
   );
 };

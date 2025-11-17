@@ -7,6 +7,7 @@ import { NetworkStatus } from '../components/NetworkStatus';
 import { LoadingIndicator } from '../components/LoadingIndicator';
 import { Product, LegacyProduct } from '../types/Product';
 import { globalStyles } from '../styles/globalStyles';
+import { useCategoriesCache } from '../hooks/useCache';
 
 interface ProductsResponse {
   products: Product[];
@@ -24,10 +25,23 @@ export const ProductListScreen: React.FC = () => {
     { immediate: true, timeout: 7000 }
   );
 
+  // Cache untuk categories - BARU DITAMBAH
+  const { data: cachedCategories, loading: categoriesLoading } = useCategoriesCache(
+    async () => {
+      try {
+        const response = await fetch('https://dummyjson.com/products/categories');
+        const categories = await response.json();
+        return categories;
+      } catch (err) {
+        console.error('Error fetching categories:', err);
+        return [];
+      }
+    }
+  );
+
   const isOnline = isConnected && isInternetReachable;
 
   const handleProductPress = (product: Product) => {
-    // Convert to LegacyProduct format for compatibility
     const legacyProduct: LegacyProduct = {
       id: product.id.toString(),
       name: product.title,
@@ -67,6 +81,7 @@ export const ProductListScreen: React.FC = () => {
           <Text style={styles.offlineTitle}>📶 Offline</Text>
           <Text style={styles.offlineText}>
             Anda sedang Offline. Cek koneksi Anda.
+            {cachedCategories && `\n\n${cachedCategories.length} kategori tersedia dari cache.`}
           </Text>
           <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
             <Text style={styles.retryButtonText}>Coba Lagi</Text>
@@ -110,6 +125,7 @@ export const ProductListScreen: React.FC = () => {
         <Text style={styles.title}>Daftar Produk</Text>
         <Text style={styles.subtitle}>
           {data?.products.length || 0} produk ditemukan
+          {cachedCategories && ` • ${cachedCategories.length} kategori tersedia`}
         </Text>
       </View>
 
