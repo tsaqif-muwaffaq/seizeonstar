@@ -2,8 +2,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const STORAGE_KEYS = {
   AUTH_TOKEN: '@app:auth_token',
-  USER_DATA: '@app:user_data', 
+  USER_DATA: '@app:user_data',
   CART_DATA: '@app:cart_data',
+  CART_ITEMS: '@app:cart_items', // TAMBAHKAN INI
   CATEGORIES_CACHE: '@app:categories_cache',
   THEME_PREFERENCE: '@app:theme_preference',
   NOTIFICATION_STATUS: '@app:notification_status',

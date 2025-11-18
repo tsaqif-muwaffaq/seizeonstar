@@ -118,7 +118,7 @@ import { ProductDetailScreen } from '../screens/ProductDetailScreen';
 import { ExtendedHomeTabs } from '../components/ExtendedHomeTabs';
 import { CheckoutScreen } from '../screens/CheckoutScreen';
 import { AnalyticsScreen } from '../screens/AnalyticsScreen';
-import { LoginScreen } from '../screens/LoginScreen';
+import  LoginScreen  from '../screens/LoginScreen';
 import { ProductListScreen } from '../screens/ProductListScreen';
 import { CartScreen } from '../screens/CartScreen';
 import { useAuthContext } from '../context/AuthContext';
@@ -128,9 +128,9 @@ import { View } from 'react-native';
 const Stack = createNativeStackNavigator();
 
 const StackNavigator = () => {
-  const { isAuthenticated, loading } = useAuthContext();
+  const { isAuthenticated, isLoading } = useAuthContext();
 
-  if (loading) {
+  if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <LoadingIndicator text="Memuat aplikasi..." />

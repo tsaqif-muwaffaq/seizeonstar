@@ -21,6 +21,7 @@ import { AddProductModal } from '../components/AddProductModal';
 import { ProductDetailModal } from '../components/ProductDetailModal';
 import { globalStyles } from '../styles/globalStyles';
 import { ExtendedHomeTabs } from '../components/ExtendedHomeTabs';
+import { useAuthContext } from '../context/AuthContext';
 
 // Data produk untuk semua kategori
 const productCategories: { [key: string]: AnyProduct[] } = {
@@ -42,6 +43,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
   const { width, height } = useWindowDimensions();
+  const { user } = useAuthContext();
 
   const handleAddProduct = useCallback((newProduct: LegacyProduct) => {
     setProducts(prev => [newProduct, ...prev]);
