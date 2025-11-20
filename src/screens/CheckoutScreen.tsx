@@ -1,97 +1,94 @@
 import * as React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { AnyProduct, getProductName, getProductImageUrl, getProductPrice } from '../types/Product';
-import { globalStyles } from '../styles/globalStyles';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../types';
+import ProtectedRoute from '../components/ProtectedRoute';
 
-type CheckoutRouteProp = RouteProp<{ Checkout: { product: AnyProduct } }, 'Checkout'>;
+type CheckoutScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Cart'>;
 
-export const CheckoutScreen: React.FC = () => {
-  const navigation = useNavigation();
-  const route = useRoute<CheckoutRouteProp>();
-  const { product } = route.params;
+const CheckoutScreen = () => {
+  const navigation = useNavigation<CheckoutScreenNavigationProp>();
 
-  const handleConfirmOrder = () => {
-    Alert.alert('Sukses', 'Pesanan berhasil dikonfirmasi!');
-    navigation.goBack();
+  const handleCheckout = () => {
+    Alert.alert(
+      'Order Confirmed',
+      'Your order has been placed successfully!',
+      [
+        {
+          text: 'Continue Shopping',
+          onPress: () => navigation.navigate('Home'),
+        },
+      ]
+    );
   };
 
-  const productName = getProductName(product);
-  const productImageUrl = getProductImageUrl(product);
-  const productPrice = getProductPrice(product);
-
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Checkout</Text>
-      </View>
+    <ProtectedRoute>
+      <ScrollView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Checkout</Text>
+          <Text style={styles.subtitle}>Protected route - requires authentication</Text>
+        </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.productSection}>
-          <Text style={styles.sectionTitle}>Produk Dipesan</Text>
-          <View style={styles.productCard}>
-            <Image source={{ uri: productImageUrl }} style={styles.productImage} />
-            <View style={styles.productInfo}>
-              <Text style={styles.productName}>{productName}</Text>
-              <Text style={styles.productPrice}>Rp {productPrice.toLocaleString('id-ID')}</Text>
-            </View>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Order Summary</Text>
+          <View style={styles.summaryItem}>
+            <Text>Items (3)</Text>
+            <Text>$127.97</Text>
+          </View>
+          <View style={styles.summaryItem}>
+            <Text>Shipping</Text>
+            <Text>$5.99</Text>
+          </View>
+          <View style={styles.summaryItem}>
+            <Text>Tax</Text>
+            <Text>$12.80</Text>
+          </View>
+          <View style={[styles.summaryItem, styles.total]}>
+            <Text style={styles.totalText}>Total</Text>
+            <Text style={styles.totalText}>$146.76</Text>
           </View>
         </View>
 
-        <View style={styles.shippingSection}>
-          <Text style={styles.sectionTitle}>Informasi Pengiriman</Text>
-          <View style={styles.infoCard}>
-            <Text style={styles.infoText}>Nama: John Doe</Text>
-            <Text style={styles.infoText}>Alamat: Jl. Contoh No. 123, Jakarta</Text>
-            <Text style={styles.infoText}>Telepon: 081234567890</Text>
-          </View>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Shipping Address</Text>
+          <Text style={styles.addressText}>
+            John Doe{'\n'}
+            123 Main Street{'\n'}
+            New York, NY 10001{'\n'}
+            United States
+          </Text>
         </View>
 
-        <View style={styles.paymentSection}>
-          <Text style={styles.sectionTitle}>Metode Pembayaran</Text>
-          <View style={styles.infoCard}>
-            <Text style={styles.infoText}>Transfer Bank - BCA</Text>
-            <Text style={styles.infoText}>No. Rek: 1234567890</Text>
-          </View>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Payment Method</Text>
+          <Text style={styles.paymentText}>•••• •••• •••• 4242</Text>
+          <Text style={styles.paymentSubtext}>Visa - Expires 12/25</Text>
         </View>
 
-        <View style={styles.summarySection}>
-          <Text style={styles.sectionTitle}>Ringkasan Pesanan</Text>
-          <View style={styles.summaryCard}>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Subtotal</Text>
-              <Text style={styles.summaryValue}>Rp {productPrice.toLocaleString('id-ID')}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Ongkir</Text>
-              <Text style={styles.summaryValue}>Rp 15.000</Text>
-            </View>
-            <View style={[styles.summaryRow, styles.totalRow]}>
-              <Text style={styles.totalLabel}>Total</Text>
-              <Text style={styles.totalValue}>
-                Rp {(productPrice + 15000).toLocaleString('id-ID')}
-              </Text>
-            </View>
-          </View>
+        <TouchableOpacity style={styles.checkoutButton} onPress={handleCheckout}>
+          <Text style={styles.checkoutButtonText}>Place Order</Text>
+        </TouchableOpacity>
+
+        <View style={styles.protectedInfo}>
+          <Text style={styles.infoTitle}>Protected Route Info</Text>
+          <Text style={styles.infoText}>
+            • This screen is protected by ProtectedRoute component{'\n'}
+            • Requires valid authentication token{'\n'}
+            • Automatically redirects to login if token is expired{'\n'}
+            • Deep links to this screen will check authentication
+          </Text>
         </View>
       </ScrollView>
-
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[globalStyles.button, globalStyles.buttonPrimary, styles.confirmButton]}
-          onPress={handleConfirmOrder}
-        >
-          <Text style={globalStyles.buttonText}>Konfirmasi Pesanan</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[globalStyles.button, styles.cancelButton]}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.cancelText}>Batalkan</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    </ProtectedRoute>
   );
 };
 
@@ -103,21 +100,22 @@ const styles = StyleSheet.create({
   header: {
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    backgroundColor: '#f9f9f9',
+    borderBottomColor: '#eee',
   },
-  headerTitle: {
-    fontSize: 20,
+  title: {
+    fontSize: 24,
     fontWeight: 'bold',
-    textAlign: 'center',
     color: '#333',
   },
-  content: {
-    flex: 1,
-    padding: 20,
+  subtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 5,
   },
-  productSection: {
-    marginBottom: 25,
+  section: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
   sectionTitle: {
     fontSize: 18,
@@ -125,103 +123,66 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     color: '#333',
   },
-  productCard: {
-    flexDirection: 'row',
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    padding: 15,
-    alignItems: 'center',
-  },
-  productImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    marginRight: 15,
-  },
-  productInfo: {
-    flex: 1,
-  },
-  productName: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 5,
-    color: '#333',
-  },
-  productPrice: {
-    fontSize: 16,
-    color: '#2196F3',
-    fontWeight: 'bold',
-  },
-  shippingSection: {
-    marginBottom: 25,
-  },
-  paymentSection: {
-    marginBottom: 25,
-  },
-  infoCard: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    padding: 15,
-  },
-  infoText: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 5,
-  },
-  summarySection: {
-    marginBottom: 25,
-  },
-  summaryCard: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    padding: 15,
-  },
-  summaryRow: {
+  summaryItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 10,
   },
-  summaryLabel: {
-    fontSize: 14,
-    color: '#666',
-  },
-  summaryValue: {
-    fontSize: 14,
-    color: '#333',
-    fontWeight: '500',
-  },
-  totalRow: {
+  total: {
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
     paddingTop: 10,
-    marginTop: 5,
+    marginTop: 10,
   },
-  totalLabel: {
-    fontSize: 16,
+  totalText: {
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
   },
-  totalValue: {
+  addressText: {
+    fontSize: 16,
+    color: '#666',
+    lineHeight: 24,
+  },
+  paymentText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  paymentSubtext: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
+  },
+  checkoutButton: {
+    backgroundColor: '#34C759',
+    margin: 20,
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  checkoutButtonText: {
+    color: '#fff',
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2196F3',
+    fontWeight: '600',
   },
-  footer: {
+  protectedInfo: {
     padding: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-    backgroundColor: '#fff',
+    margin: 20,
+    backgroundColor: '#f0f8ff',
+    borderRadius: 8,
   },
-  confirmButton: {
-    marginBottom: 10,
-  },
-  cancelButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#E53935',
-  },
-  cancelText: {
-    color: '#E53935',
+  infoTitle: {
+    fontSize: 16,
     fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#007AFF',
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
   },
 });
+
+export default CheckoutScreen;

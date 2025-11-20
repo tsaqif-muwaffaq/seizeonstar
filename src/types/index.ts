@@ -6,9 +6,11 @@ export type RootStackParamList = {
   Login: undefined;
   Home: undefined;
   Product: { id: number; productName?: string };
-  Cart: undefined;
+  Cart: { productId?: number };
+  Checkout: undefined;
   Profile: { userId: string };
   AppTabs: NavigatorScreenParams<AppTabParamList>;
+  AddToCart: { productId: number }; // FIX: Added AddToCart route
 };
 
 // Tab navigator parameter list
@@ -31,4 +33,16 @@ export interface ProductDeepLinkParams {
 
 export interface ProfileDeepLinkParams {
   userId: string;
+}
+
+// Navigation ref type
+export type NavigationRefType = {
+  navigate: (name: keyof RootStackParamList, params?: any) => void;
+  reset: (state: any) => void;
+};
+
+// Login redirect types
+export interface LoginRedirectParams {
+  redirectTo?: keyof RootStackParamList;
+  redirectParams?: any;
 }

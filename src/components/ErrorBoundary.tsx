@@ -1,98 +1,62 @@
 import * as React from 'react';
-import { View, Text, Button, StyleSheet } from 'react-native';
-import { globalStyles } from '../styles/globalStyles';
+import { Component, ReactNode, ErrorInfo } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import ErrorHandler from '../utils/errorHandler';
 
-interface ErrorBoundaryState {
+interface Props {
+  children: ReactNode;
+  fallback?: ReactNode;
+}
+
+interface State {
   hasError: boolean;
-  error: Error | null;
-  errorInfo: React.ErrorInfo | null;
+  error?: Error;
 }
 
-interface ErrorBoundaryProps {
-  children: React.ReactNode;
-  fallback?: React.ComponentType<{ error: Error; resetError: () => void }>;
-  onReset?: () => void;
-}
-
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = {
-      hasError: false,
-      error: null,
-      errorInfo: null
-    };
-  }
-
-  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
-    return {
-      hasError: true,
-      error
-    };
-  }
-
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    this.setState({
-      error,
-      errorInfo
-    });
-
-    // Log error ke konsol
-    console.error('Error Boundary caught an error:', error);
-    console.error('Component stack trace:', errorInfo.componentStack);
-    
-    // Di production, bisa dikirim ke error reporting service
-    // sendErrorToService(error, errorInfo);
-  }
-
-  resetError = () => {
-    this.setState({
-      hasError: false,
-      error: null,
-      errorInfo: null
-    });
-    
-    // Panggil callback reset jika ada
-    if (this.props.onReset) {
-      this.props.onReset();
-    }
+class ErrorBoundary extends Component<Props, State> {
+  public state: State = {
+    hasError: false
   };
 
-  render() {
+  public static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
+  }
+
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    ErrorHandler.handle(error, 'ErrorBoundary');
+  }
+
+  private handleRetry = () => {
+    this.setState({ hasError: false, error: undefined });
+  };
+
+  private handleReset = () => {
+    // You could add logic to reset app state here
+    this.setState({ hasError: false, error: undefined });
+  };
+
+  public render() {
     if (this.state.hasError) {
-      // Jika ada custom fallback component, gunakan itu
       if (this.props.fallback) {
-        const FallbackComponent = this.props.fallback;
-        return <FallbackComponent error={this.state.error!} resetError={this.resetError} />;
+        return this.props.fallback;
       }
 
-      // Default fallback UI
       return (
         <View style={styles.container}>
-          <View style={styles.content}>
-            <Text style={styles.title}>😵 Aplikasi Mengalami Masalah Tak Terduga</Text>
-            <Text style={styles.message}>
-              Maaf, terjadi kesalahan yang tidak terduga. Tim developer telah diberitahu.
-            </Text>
+          <Text style={styles.title}>Something went wrong</Text>
+          <Text style={styles.message}>
+            {this.state.error?.message || 'An unexpected error occurred'}
+          </Text>
+          
+          <View style={styles.buttons}>
+            <TouchableOpacity style={styles.retryButton} onPress={this.handleRetry}>
+              <Text style={styles.buttonText}>Try Again</Text>
+            </TouchableOpacity>
             
-            <View style={styles.errorDetails}>
-              <Text style={styles.errorTitle}>Detail Error:</Text>
-              <Text style={styles.errorText}>
-                {this.state.error?.message || 'Unknown error'}
-              </Text>
-            </View>
-
-            <Button
-              title="Mulai Ulang Aplikasi"
-              onPress={this.resetError}
-              color="#2196F3"
-            />
-            
-            <View style={styles.helpText}>
-              <Text style={styles.helpText}>
-                Jika masalah berlanjut, silakan restart aplikasi.
-              </Text>
-            </View>
+            <TouchableOpacity style={styles.resetButton} onPress={this.handleReset}>
+              <Text style={styles.buttonText}>Reset</Text>
+            </TouchableOpacity>
           </View>
         </View>
       );
@@ -105,62 +69,44 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-  },
-  content: {
     backgroundColor: '#fff',
-    padding: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
-    width: '100%',
-    maxWidth: 400,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#dc3545',
-    textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
+    color: '#333',
   },
   message: {
     fontSize: 16,
-    color: '#666',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 30,
+    color: '#666',
     lineHeight: 22,
   },
-  errorDetails: {
-    backgroundColor: '#f8f9fa',
-    padding: 16,
+  buttons: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  retryButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     borderRadius: 8,
-    marginBottom: 20,
-    width: '100%',
   },
-  errorTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
+  resetButton: {
+    backgroundColor: '#FF3B30',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
   },
-  errorText: {
-    fontSize: 12,
-    color: '#666',
-    fontFamily: 'monospace',
-  },
-  helpText: {
-    fontSize: 12,
-    color: '#999',
-    textAlign: 'center',
-    marginTop: 16,
-    fontStyle: 'italic',
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

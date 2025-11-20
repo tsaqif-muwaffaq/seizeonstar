@@ -116,7 +116,7 @@ import { OnboardingScreen2 } from '../screens/OnboardingScreen2';
 import DrawerNavigator from './DrawerNavigator';
 import { ProductDetailScreen } from '../screens/ProductDetailScreen';
 import { ExtendedHomeTabs } from '../components/ExtendedHomeTabs';
-import { CheckoutScreen } from '../screens/CheckoutScreen';
+import  CheckoutScreen  from '../screens/CheckoutScreen';
 import { AnalyticsScreen } from '../screens/AnalyticsScreen';
 import  LoginScreen  from '../screens/LoginScreen';
 import { ProductListScreen } from '../screens/ProductListScreen';

@@ -1,84 +1,16 @@
-// import { useState, useEffect, useCallback } from 'react';
-// import { Storage, STORAGE_KEYS } from '../utils/storage';
-
-// export const useAuth = () => {
-//   const [token, setToken] = useState<string | null>(null);
-//   const [user, setUser] = useState<any | null>(null);
-//   const [loading, setLoading] = useState(true);
-
-//   // Load auth data on app start
-//   useEffect(() => {
-//     const loadAuthData = async () => {
-//       try {
-//         setLoading(true);
-//         const [tokenData, userData] = await Storage.multiGet([
-//           STORAGE_KEYS.AUTH_TOKEN,
-//           STORAGE_KEYS.USER_DATA,
-//         ]);
-        
-//         setToken(tokenData[1]);
-//         setUser(userData[1]);
-//       } catch (error) {
-//         console.error('Error loading auth data:', error);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     loadAuthData();
-//   }, []);
-
-//   const login = useCallback(async (newToken: string, userData: any) => {
-//     try {
-//       await Storage.multiSet([
-//         [STORAGE_KEYS.AUTH_TOKEN, newToken],
-//         [STORAGE_KEYS.USER_DATA, userData],
-//       ]);
-//       setToken(newToken);
-//       setUser(userData);
-//     } catch (error) {
-//       console.error('Login storage error:', error);
-//       throw error;
-//     }
-//   }, []);
-
-//   const logout = useCallback(async () => {
-//     try {
-//       await Storage.multiRemove([
-//         STORAGE_KEYS.AUTH_TOKEN,
-//         STORAGE_KEYS.USER_DATA,
-//         STORAGE_KEYS.CART_DATA,
-//       ]);
-//       setToken(null);
-//       setUser(null);
-//     } catch (error) {
-//       console.error('Logout storage error:', error);
-//       throw error;
-//     }
-//   }, []);
-
-//   const isAuthenticated = !!token;
-
-//   return {
-//     token,
-//     user,
-//     isAuthenticated,
-//     loading,
-//     login,
-//     logout,
-//   };
-// };
-
 import { useState, useCallback, useEffect } from 'react';
 import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import KeychainService from '../services/keychainService';
+import TokenManager from '../utils/tokenManager';
+import ErrorHandler from '../utils/errorHandler';
 import { STORAGE_KEYS } from '../utils/storage';
 
 export interface User {
   id: string;
   name: string;
   email: string;
+  tokenExpiry?: number;
 }
 
 export interface AuthState {
@@ -88,14 +20,7 @@ export interface AuthState {
   isAuthenticated: boolean;
 }
 
-// Export the return type for AuthContext
-export type UseAuthReturnType = AuthState & {
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => Promise<boolean>;
-  loadAuthData: () => Promise<{ user: User | null; token: string | null; }>;
-};
-
-const useAuth = (): UseAuthReturnType => {
+const useAuth = () => {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     token: null,
@@ -103,45 +28,29 @@ const useAuth = (): UseAuthReturnType => {
     isAuthenticated: false,
   });
 
-  const loadAuthData = useCallback(async (): Promise<{ user: User | null; token: string | null; }> => {
+  const loadAuthData = useCallback(async () => {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true }));
 
-      // Load data from both storage systems in parallel
-      const [keychainResult, asyncStorageResult] = await Promise.allSettled([
-        KeychainService.getAuthToken(),
-        AsyncStorage.multiGet([
-          STORAGE_KEYS.USER_DATA,
-          STORAGE_KEYS.THEME_PREFERENCE,
-        ]),
-      ]);
-
-      let token: string | null = null;
-      let user: User | null = null;
-
-      // Process Keychain result (token)
-      if (keychainResult.status === 'fulfilled' && keychainResult.value) {
-        token = keychainResult.value.password;
-        
-        // Try to get user data from AsyncStorage
-        const userDataEntry = asyncStorageResult.status === 'fulfilled' 
-          ? asyncStorageResult.value.find(([key]) => key === STORAGE_KEYS.USER_DATA)
-          : null;
-          
-        if (userDataEntry && userDataEntry[1]) {
-          user = JSON.parse(userDataEntry[1]);
-        }
-      } else if (keychainResult.status === 'rejected') {
-        const error = keychainResult.reason;
-        if (error.message.includes('ACCESS_DENIED')) {
-          Alert.alert(
-            'Security Changed',
-            'Device security was modified. Please login again.',
-            [{ text: 'OK' }]
-          );
-          await logout();
-        }
+      // Check token expiry first
+      const isExpired = await TokenManager.isTokenExpired();
+      if (isExpired) {
+        await TokenManager.clearToken();
+        setAuthState({
+          user: null,
+          token: null,
+          isLoading: false,
+          isAuthenticated: false,
+        });
+        return { user: null, token: null };
       }
+
+      // Get token from Keychain
+      const token = await TokenManager.getToken();
+      
+      // Get user data from AsyncStorage
+      const userDataString = await AsyncStorage.getItem(STORAGE_KEYS.USER_DATA);
+      const user = userDataString ? JSON.parse(userDataString) : null;
 
       setAuthState({
         user,
@@ -152,7 +61,7 @@ const useAuth = (): UseAuthReturnType => {
 
       return { user, token };
     } catch (error) {
-      console.error('Auth: Failed to load auth data', error);
+      ErrorHandler.handle(error, 'loading auth data');
       setAuthState({
         user: null,
         token: null,
@@ -165,20 +74,26 @@ const useAuth = (): UseAuthReturnType => {
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     try {
-      // Simulate API call
+      // Simulate API call to dummyjson.com
       const mockUser: User = {
-        id: 'user_123',
+        id: 'user_' + Date.now(),
         name: 'John Doe',
         email: email,
       };
       
-      const mockToken = 'jwt_token_' + Date.now();
+      // Mock token from dummyjson (valid for 24 hours)
+      const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.' + 
+        'eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjI0MTYyMzkwMjJ9.' +
+        'dummy_signature';
 
-      // Save to Keychain (secure) and AsyncStorage (non-sensitive)
-      await Promise.all([
-        KeychainService.saveAuthToken(mockUser.id, mockToken),
-        AsyncStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(mockUser)),
-      ]);
+      // Save token with 24 hour expiry
+      await TokenManager.saveToken(mockToken, 24 * 60 * 60 * 1000);
+
+      // Save user data
+      await AsyncStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify({
+        ...mockUser,
+        tokenExpiry: Date.now() + (24 * 60 * 60 * 1000)
+      }));
 
       setAuthState({
         user: mockUser,
@@ -189,23 +104,20 @@ const useAuth = (): UseAuthReturnType => {
 
       return true;
     } catch (error) {
-      console.error('Auth: Login failed', error);
-      Alert.alert('Login Error', 'Failed to save authentication data');
+      ErrorHandler.handle(error, 'login');
       return false;
     }
   }, []);
 
   const logout = useCallback(async (): Promise<boolean> => {
     try {
-      // Clear both storage systems
-      await Promise.all([
-        KeychainService.clearAllKeychainData(),
-        AsyncStorage.multiRemove([
-          STORAGE_KEYS.USER_DATA,
-          STORAGE_KEYS.CART_ITEMS,
-          STORAGE_KEYS.CART_DATA,
-          STORAGE_KEYS.THEME_PREFERENCE,
-        ]),
+      // Clear all storage data
+      await TokenManager.clearToken();
+      await AsyncStorage.multiRemove([
+        STORAGE_KEYS.USER_DATA,
+        STORAGE_KEYS.CART_ITEMS,
+        STORAGE_KEYS.WISHLIST_ITEMS,
+        STORAGE_KEYS.WISHLIST_META,
       ]);
 
       setAuthState({
@@ -215,12 +127,33 @@ const useAuth = (): UseAuthReturnType => {
         isAuthenticated: false,
       });
 
+      console.log('Logout successful - all data cleared');
       return true;
     } catch (error) {
-      console.error('Auth: Logout failed', error);
+      ErrorHandler.handle(error, 'logout');
       return false;
     }
   }, []);
+
+  const checkTokenExpiry = useCallback(async (): Promise<boolean> => {
+    const isExpired = await TokenManager.isTokenExpired();
+    if (isExpired) {
+      await logout();
+      Alert.alert('Session Expired', 'Your session has expired. Please login again.');
+    }
+    return isExpired;
+  }, [logout]);
+
+  // Check token expiry periodically
+  useEffect(() => {
+    if (authState.isAuthenticated) {
+      const interval = setInterval(() => {
+        checkTokenExpiry();
+      }, 60000); // Check every minute
+
+      return () => clearInterval(interval);
+    }
+  }, [authState.isAuthenticated, checkTokenExpiry]);
 
   // Initialize auth data on mount
   useEffect(() => {
@@ -228,10 +161,11 @@ const useAuth = (): UseAuthReturnType => {
   }, [loadAuthData]);
 
   return {
-    ...authState, // This includes user, token, isLoading, isAuthenticated
+    ...authState,
     login,
     logout,
     loadAuthData,
+    checkTokenExpiry,
   };
 };
 

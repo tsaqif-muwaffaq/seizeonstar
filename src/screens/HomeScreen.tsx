@@ -1,412 +1,5 @@
-// import * as React from 'react';
-// import { useState, useCallback } from 'react';
-// import { 
-//   View, 
-//   FlatList, 
-//   Text, 
-//   StyleSheet, 
-//   Image, 
-//   TouchableOpacity, 
-//   useWindowDimensions,
-//   Alert,
-//   RefreshControl,
-//   StatusBar,
-//   Modal,
-//   ScrollView
-// } from 'react-native';
-// import { useNavigation } from '@react-navigation/native';
-// import { LegacyProduct, AnyProduct, getProductId, getProductName, getProductImageUrl, getProductDescription, getProductPrice } from '../types/Product';
-// import { initialProducts } from '../data/products';
-// import { AddProductModal } from '../components/AddProductModal';
-// import { ProductDetailModal } from '../components/ProductDetailModal';
-// import { globalStyles } from '../styles/globalStyles';
-// import { ExtendedHomeTabs } from '../components/ExtendedHomeTabs';
-// import { useAuthContext } from '../context/AuthContext';
-
-// // Data produk untuk semua kategori
-// const productCategories: { [key: string]: AnyProduct[] } = {
-//   'Semua': initialProducts,
-//   'Populer': initialProducts.slice(0, 3),
-//   'Terbaru': initialProducts.slice(3, 6),
-//   'Chambre de Lavain': initialProducts
-// };
-
-// interface HomeScreenProps {
-//   navigation: any;
-// }
-
-// export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
-//   const [products, setProducts] = useState<AnyProduct[]>(initialProducts);
-//   const [addModalVisible, setAddModalVisible] = useState<boolean>(false);
-//   const [detailModalVisible, setDetailModalVisible] = useState<boolean>(false);
-//   const [selectedProduct, setSelectedProduct] = useState<AnyProduct | null>(null);
-//   const [refreshing, setRefreshing] = useState<boolean>(false);
-//   const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
-//   const { width, height } = useWindowDimensions();
-//   const { user } = useAuthContext();
-
-//   const handleAddProduct = useCallback((newProduct: LegacyProduct) => {
-//     setProducts(prev => [newProduct, ...prev]);
-//     productCategories['Semua'] = [newProduct, ...productCategories['Semua']];
-//     setAddModalVisible(false);
-//   }, []);
-
-//   // Soal Praktik 2: Navigasi ke Stack Detail
-//   const handleProductPress = useCallback((product: AnyProduct) => {
-//     navigation.navigate('ProductDetail' as never, { product } as never);
-//   }, [navigation]);
-
-//   const handleDeleteProduct = useCallback((productId: string) => {
-//     Alert.alert(
-//       'Hapus Produk',
-//       'Apakah Anda yakin ingin menghapus produk ini?',
-//       [
-//         {
-//           text: 'Batal',
-//           style: 'cancel',
-//         },
-//         {
-//           text: 'Hapus',
-//           style: 'destructive',
-//           onPress: () => {
-//             setProducts(prev => prev.filter(product => getProductId(product) !== productId));
-//             productCategories['Semua'] = productCategories['Semua'].filter(product => getProductId(product) !== productId);
-//             if (selectedProduct && getProductId(selectedProduct) === productId) {
-//               setDetailModalVisible(false);
-//               setSelectedProduct(null);
-//             }
-//           },
-//         },
-//       ]
-//     );
-//   }, [selectedProduct]);
-
-//   const onRefresh = useCallback(() => {
-//     setRefreshing(true);
-//     setTimeout(() => {
-//       setProducts(initialProducts);
-//       productCategories['Semua'] = initialProducts;
-//       setRefreshing(false);
-//     }, 1000);
-//   }, []);
-
-//   const isLandscape = width > height;
-//   const numColumns = isLandscape ? 3 : 2;
-
-//   const filteredProducts = productCategories[selectedCategory] || products;
-
-//   const renderProductItem = useCallback(({ item }: { item: AnyProduct }) => (
-//     <TouchableOpacity 
-//       onPress={() => handleProductPress(item)} 
-//       style={[
-//         styles.card, 
-//         isLandscape ? { width: `${100 / numColumns - 2}%` } : { width: `${100 / numColumns - 4}%` }
-//       ]}
-//       activeOpacity={0.7}
-//     >
-//       <Image 
-//         source={{ uri: getProductImageUrl(item) }} 
-//         style={styles.image} 
-//       />
-
-//       <View style={styles.productInfo}>
-//         <Text style={styles.name} numberOfLines={2}>{getProductName(item)}</Text>
-//         <Text style={styles.price}>Rp {getProductPrice(item).toLocaleString('id-ID')}</Text>
-//         {getProductDescription(item) ? (
-//           <Text style={styles.desc} numberOfLines={2}>{getProductDescription(item)}</Text>
-//         ) : null}
-//       </View>
-//     </TouchableOpacity>
-//   ), [isLandscape, numColumns, handleProductPress]);
-
-//   const getProductKey = useCallback((item: AnyProduct) => getProductId(item), []);
-
-//   const renderCategoryChip = useCallback((category: string) => (
-//     <TouchableOpacity
-//       key={category}
-//       style={[
-//         styles.categoryChip,
-//         selectedCategory === category && styles.categoryChipActive
-//       ]}
-//       onPress={() => setSelectedCategory(category)}
-//     >
-//       <Text style={[
-//         styles.categoryChipText,
-//         selectedCategory === category && styles.categoryChipTextActive
-//       ]}>
-//         {category}
-//       </Text>
-//       <Text style={styles.categoryCount}>
-//         ({productCategories[category]?.length || 0})
-//       </Text>
-//     </TouchableOpacity>
-//   ), [selectedCategory]);
-
-//   return (
-//     <View style={globalStyles.container}>
-//       <StatusBar barStyle="dark-content" backgroundColor="#f9f9f9" />
-      
-//       {/* Header dengan tombol menu */}
-//       <View style={styles.header}>
-//         <TouchableOpacity 
-//           style={styles.menuButton}
-//           onPress={() => navigation.toggleDrawer()}
-//         >
-//           <Text style={styles.menuButtonText}>☰</Text>
-//         </TouchableOpacity>
-//         <View style={styles.headerTitle}>
-//           <Text style={globalStyles.title}>seizeonstar.catalog</Text>
-//           <Text style={styles.productCount}>
-//             {filteredProducts.length} produk di {selectedCategory}
-//           </Text>
-//         </View>
-//       </View>
-
-//       {/* Kategori Section */}
-//       <View style={styles.categoriesSection}>
-//         <Text style={styles.categoriesTitle}>Kategori Produk</Text>
-//         <ScrollView 
-//           horizontal 
-//           showsHorizontalScrollIndicator={false}
-//           contentContainerStyle={styles.categoriesContainer}
-//         >
-//           {Object.keys(productCategories).map(renderCategoryChip)}
-          
-//           {/* Tombol Extended Tabs */}
-//           <TouchableOpacity
-//             style={styles.seeAllButton}
-//             onPress={() => navigation.navigate('ExtendedTabs')}
-//           >
-//             <Text style={styles.seeAllText}>Semua Kategori →</Text>
-//           </TouchableOpacity>
-//         </ScrollView>
-//       </View>
-
-//       {/* Products List */}
-//       <FlatList
-//         data={filteredProducts}
-//         renderItem={renderProductItem}
-//         keyExtractor={getProductKey}
-//         contentContainerStyle={styles.list}
-//         numColumns={numColumns}
-//         key={`flatlist-${numColumns}`}
-//         showsVerticalScrollIndicator={false}
-//         refreshControl={
-//           <RefreshControl
-//             refreshing={refreshing}
-//             onRefresh={onRefresh}
-//             colors={['#2196F3']}
-//             tintColor={'#2196F3'}
-//           />
-//         }
-//         ListEmptyComponent={
-//           <View style={styles.emptyContainer}>
-//             <Text style={styles.emptyText}>Belum ada produk dalam kategori "{selectedCategory}"</Text>
-//             <Text style={styles.emptySubText}>Coba pilih kategori lain</Text>
-//           </View>
-//         }
-//       />
-
-//       {/* Add Product Floating Button */}
-//       <TouchableOpacity
-//         style={styles.addButton}
-//         onPress={() => setAddModalVisible(true)}
-//         activeOpacity={0.8}
-//       >
-//         <Text style={styles.addButtonText}>+</Text>
-//       </TouchableOpacity>
-
-//       {/* Modals */}
-//       <Modal
-//         visible={addModalVisible}
-//         animationType="slide"
-//         transparent={true}
-//         onRequestClose={() => setAddModalVisible(false)}
-//       >
-//         <AddProductModal
-//           onAdd={handleAddProduct}
-//           onClose={() => setAddModalVisible(false)}
-//           visible={addModalVisible}
-//         />
-//       </Modal>
-
-//       {/* <ProductDetailModal
-//         product={selectedProduct}
-//         onClose={() => {
-//           setDetailModalVisible(false);
-//           setSelectedProduct(null);
-//         }}
-//         visible={detailModalVisible}
-//         onDelete={handleDeleteProduct}
-//       /> */}
-//     </View>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   header: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     marginBottom: 16,
-//     paddingHorizontal: 10,
-//   },
-//   menuButton: {
-//     padding: 10,
-//     marginRight: 10,
-//   },
-//   menuButtonText: {
-//     fontSize: 20,
-//     fontWeight: 'bold',
-//     color: '#333',
-//   },
-//   headerTitle: {
-//     flex: 1,
-//     alignItems: 'center',
-//   },
-//   productCount: {
-//     fontSize: 14,
-//     color: '#666',
-//     marginTop: 4,
-//   },
-//   categoriesSection: {
-//     marginBottom: 16,
-//   },
-//   categoriesTitle: {
-//     fontSize: 18,
-//     fontWeight: 'bold',
-//     marginBottom: 12,
-//     marginLeft: 8,
-//     color: '#333',
-//   },
-//   categoriesContainer: {
-//     paddingHorizontal: 8,
-//     paddingBottom: 8,
-//   },
-//   categoryChip: {
-//     paddingHorizontal: 16,
-//     paddingVertical: 8,
-//     borderRadius: 20,
-//     backgroundColor: '#f0f0f0',
-//     marginRight: 8,
-//     borderWidth: 1,
-//     borderColor: '#e0e0e0',
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//   },
-//   categoryChipActive: {
-//     backgroundColor: '#2196F3',
-//     borderColor: '#2196F3',
-//   },
-//   categoryChipText: {
-//     fontSize: 14,
-//     color: '#666',
-//     fontWeight: '500',
-//   },
-//   categoryChipTextActive: {
-//     color: '#fff',
-//   },
-//   categoryCount: {
-//     fontSize: 12,
-//     color: '#999',
-//     marginLeft: 4,
-//   },
-//   seeAllButton: {
-//     paddingHorizontal: 16,
-//     paddingVertical: 8,
-//     borderRadius: 20,
-//     backgroundColor: '#4CAF50',
-//     marginRight: 8,
-//   },
-//   seeAllText: {
-//     fontSize: 14,
-//     color: '#fff',
-//     fontWeight: '500',
-//   },
-//   list: {
-//     paddingHorizontal: 8,
-//     paddingBottom: 100,
-//   },
-//   card: {
-//     backgroundColor: '#fff',
-//     borderRadius: 12,
-//     margin: 6,
-//     shadowColor: '#000',
-//     shadowOpacity: 0.1,
-//     shadowOffset: { width: 0, height: 2 },
-//     shadowRadius: 6,
-//     elevation: 3,
-//     overflow: 'hidden',
-//   },
-//   image: {
-//     width: '100%',
-//     height: 160,
-//     resizeMode: 'cover',
-//   },
-//   productInfo: {
-//     padding: 12,
-//   },
-//   name: {
-//     fontSize: 16,
-//     fontWeight: 'bold',
-//     color: '#333',
-//     marginBottom: 4,
-//   },
-//   price: {
-//     fontSize: 16,
-//     color: '#2196F3',
-//     fontWeight: '600',
-//     marginBottom: 4,
-//   },
-//   desc: {
-//     fontSize: 12,
-//     color: '#666',
-//     lineHeight: 16,
-//   },
-//   addButton: {
-//     position: 'absolute',
-//     bottom: 25,
-//     right: 25,
-//     backgroundColor: '#2196F3',
-//     width: 60,
-//     height: 60,
-//     borderRadius: 30,
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//     elevation: 8,
-//     shadowColor: '#000',
-//     shadowOffset: { width: 0, height: 2 },
-//     shadowOpacity: 0.3,
-//     shadowRadius: 4,
-//   },
-//   addButtonText: {
-//     color: '#fff',
-//     fontWeight: 'bold',
-//     fontSize: 24,
-//     lineHeight: 28,
-//   },
-//   emptyContainer: {
-//     flex: 1,
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//     paddingVertical: 100,
-//   },
-//   emptyText: {
-//     fontSize: 18,
-//     color: '#666',
-//     fontWeight: '600',
-//     marginBottom: 8,
-//     textAlign: 'center',
-//   },
-//   emptySubText: {
-//     fontSize: 14,
-//     color: '#999',
-//     textAlign: 'center',
-//   },
-// });
-
-// export default HomeScreen;
-
 import * as React from 'react';
+import { useState } from 'react';
 import { 
   View, 
   Text, 
@@ -419,11 +12,12 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import useAuth from '../hooks/useAuth';
+import useWishlist from '../hooks/useWishlist';
 import DeepLinkService from '../services/deepLinkService';
 import { RootStackParamList } from '../types';
 
-// Define navigation prop type
-type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
+// FIX: Define proper navigation prop type
+type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 // Mock products data
 const mockProducts = [
@@ -436,28 +30,43 @@ const mockProducts = [
 ];
 
 const HomeScreen = () => {
-  // Use typed navigation hook
+  // FIX: Use the proper navigation type without specifying screen
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const { user } = useAuth();
+  const { wishlist, toggleWishlistItem, isInWishlist, meta } = useWishlist();
+  
+  const [products, setProducts] = useState(mockProducts);
 
+  // FIX: Properly typed navigation functions
   const navigateToProduct = (productId: number) => {
     console.log('Navigating to product:', productId);
     navigation.navigate('Product', { id: productId });
   };
 
-  const navigateToCart = () => {
-    navigation.navigate('Cart');
-  };
+ const navigateToCart = () => {
+  navigation.navigate('Cart' as never);
+};
 
   const navigateToProfile = (userId: string) => {
     navigation.navigate('Profile', { userId });
+  };
+
+  const handleWishlistToggle = async (productId: number) => {
+    const added = await toggleWishlistItem(productId);
+    if (added) {
+      Alert.alert('Added to Wishlist', 'Product added to your wishlist!');
+    } else {
+      Alert.alert('Removed from Wishlist', 'Product removed from your wishlist.');
+    }
   };
 
   const testDeepLinks = () => {
     const testLinks = [
       { url: 'ecommerceapp://produk/123', description: 'Product 123' },
       { url: 'ecommerceapp://keranjang', description: 'Cart' },
+      { url: 'ecommerceapp://add-to-cart/55', description: 'Add to Cart 55' },
       { url: 'ecommerceapp://profil/testuser', description: 'Profile Test' },
+      { url: 'ecommerceapp://checkout', description: 'Checkout' },
     ];
 
     Alert.alert(
@@ -476,37 +85,64 @@ const HomeScreen = () => {
     );
   };
 
-  const renderProductItem = ({ item }: { item: any }) => (
-    <TouchableOpacity
-      style={styles.productCard}
-      onPress={() => navigateToProduct(item.id)}
-    >
-      <View style={styles.productImage}>
-        <Text style={styles.productEmoji}>
-          {item.category === 'Electronics' ? '📱' : 
-           item.category === 'Fashion' ? '👟' : 
-           item.category === 'Home' ? '🏠' : '📚'}
-        </Text>
+  const renderProductItem = ({ item }: { item: any }) => {
+    const inWishlist = isInWishlist(item.id);
+    
+    return (
+      <View style={styles.productCard}>
+        <TouchableOpacity
+          style={styles.productContent}
+          onPress={() => navigateToProduct(item.id)}
+        >
+          <View style={styles.productImage}>
+            <Text style={styles.productEmoji}>
+              {item.category === 'Electronics' ? '📱' : 
+               item.category === 'Fashion' ? '👟' : 
+               item.category === 'Home' ? '🏠' : '📚'}
+            </Text>
+          </View>
+          
+          <View style={styles.productInfo}>
+            <Text style={styles.productName}>{item.name}</Text>
+            <Text style={styles.productCategory}>{item.category}</Text>
+            <Text style={styles.productPrice}>${item.price.toFixed(2)}</Text>
+          </View>
+        </TouchableOpacity>
+        
+        <View style={styles.productActions}>
+          <TouchableOpacity 
+            style={styles.viewButton}
+            onPress={() => navigateToProduct(item.id)}
+          >
+            <Text style={styles.viewButtonText}>View</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.wishlistButton, inWishlist && styles.wishlistButtonActive]}
+            onPress={() => handleWishlistToggle(item.id)}
+          >
+            <Text style={[styles.wishlistButtonText, inWishlist && styles.wishlistButtonTextActive]}>
+              {inWishlist ? '♥' : '♡'}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
-      <View style={styles.productInfo}>
-        <Text style={styles.productName}>{item.name}</Text>
-        <Text style={styles.productCategory}>{item.category}</Text>
-        <Text style={styles.productPrice}>${item.price.toFixed(2)}</Text>
-      </View>
-      <TouchableOpacity 
-        style={styles.viewButton}
-        onPress={() => navigateToProduct(item.id)}
-      >
-        <Text style={styles.viewButtonText}>View</Text>
-      </TouchableOpacity>
-    </TouchableOpacity>
-  );
+    );
+  };
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Welcome to E-Commerce!</Text>
         <Text style={styles.subtitle}>Hello, {user?.name}!</Text>
+        
+        {meta && (
+          <View style={styles.wishlistSummary}>
+            <Text style={styles.wishlistText}>
+              {meta.count} items in wishlist • Updated {new Date(meta.updatedAt).toLocaleDateString()}
+            </Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.section}>
@@ -517,7 +153,7 @@ const HomeScreen = () => {
       </View>
 
       <FlatList
-        data={mockProducts}
+        data={products}
         renderItem={renderProductItem}
         keyExtractor={item => item.id.toString()}
         scrollEnabled={false}
@@ -547,36 +183,22 @@ const HomeScreen = () => {
         <Text style={styles.testButtonText}>Test Deep Links</Text>
       </TouchableOpacity>
 
-      <View style={styles.debugSection}>
-        <Text style={styles.debugTitle}>Debug Info:</Text>
-        <Text style={styles.debugText}>• ProductScreen is in Root Stack</Text>
-        <Text style={styles.debugText}>• Navigation: navigation.navigate('Product', {'{'} id: 123 {'}'})</Text>
-        <Text style={styles.debugText}>• Deep Link: ecommerceapp://produk/123</Text>
-        <Text style={styles.debugText}>• User ID: {user?.id}</Text>
+      <View style={styles.features}>
+        <Text style={styles.featuresTitle}>Active Features:</Text>
+        <Text style={styles.featureItem}>• Protected Routes with Authentication</Text>
+        <Text style={styles.featureItem}>• Secure Token Management (Keychain)</Text>
+        <Text style={styles.featureItem}>• Wishlist with AsyncStorage</Text>
+        <Text style={styles.featureItem}>• Deep Link Handling (Cold/Warm Start)</Text>
+        <Text style={styles.featureItem}>• Add to Cart via Deep Links</Text>
+        <Text style={styles.featureItem}>• Automatic Token Expiry Check</Text>
       </View>
 
-      <View style={styles.navigationTest}>
-        <Text style={styles.sectionTitle}>Navigation Test</Text>
-        <View style={styles.testButtons}>
-          <TouchableOpacity
-            style={styles.smallTestButton}
-            onPress={() => navigateToProduct(999)}
-          >
-            <Text style={styles.smallTestButtonText}>Test Product 999</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.smallTestButton}
-            onPress={navigateToCart}
-          >
-            <Text style={styles.smallTestButtonText}>Test Cart</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.smallTestButton}
-            onPress={() => navigateToProfile('test-user-123')}
-          >
-            <Text style={styles.smallTestButtonText}>Test Profile</Text>
-          </TouchableOpacity>
-        </View>
+      <View style={styles.debugSection}>
+        <Text style={styles.debugTitle}>Debug Info:</Text>
+        <Text style={styles.debugText}>• User: {user?.id}</Text>
+        <Text style={styles.debugText}>• Wishlist Items: {wishlist.length}</Text>
+        <Text style={styles.debugText}>• Protected Routes: Cart, Checkout, Profile</Text>
+        <Text style={styles.debugText}>• Token Expiry: {user?.tokenExpiry ? new Date(user.tokenExpiry).toLocaleString() : 'N/A'}</Text>
       </View>
     </ScrollView>
   );
@@ -600,6 +222,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     marginTop: 5,
+  },
+  wishlistSummary: {
+    marginTop: 10,
+    padding: 8,
+    backgroundColor: '#e7f3ff',
+    borderRadius: 6,
+  },
+  wishlistText: {
+    fontSize: 12,
+    color: '#007AFF',
+    textAlign: 'center',
   },
   section: {
     padding: 20,
@@ -637,6 +270,11 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
+  productContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   productImage: {
     width: 50,
     height: 50,
@@ -668,6 +306,11 @@ const styles = StyleSheet.create({
     color: '#007AFF',
     marginTop: 4,
   },
+  productActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   viewButton: {
     backgroundColor: '#007AFF',
     paddingHorizontal: 12,
@@ -678,6 +321,27 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: '600',
+  },
+  wishlistButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#f8f9fa',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#dee2e6',
+  },
+  wishlistButtonActive: {
+    backgroundColor: '#dc3545',
+    borderColor: '#dc3545',
+  },
+  wishlistButtonText: {
+    fontSize: 14,
+    color: '#6c757d',
+  },
+  wishlistButtonTextActive: {
+    color: '#fff',
   },
   quickActions: {
     padding: 20,
@@ -711,49 +375,42 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
   },
-  debugSection: {
+  features: {
     padding: 20,
-    backgroundColor: '#f8f9fa',
     margin: 20,
+    backgroundColor: '#f8f9fa',
     borderRadius: 8,
   },
-  debugTitle: {
+  featuresTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 10,
     color: '#333',
   },
-  debugText: {
+  featureItem: {
     fontSize: 14,
     color: '#666',
     marginBottom: 5,
-    fontFamily: 'monospace',
   },
-  navigationTest: {
-    padding: 20,
-    backgroundColor: '#f0f8ff',
+  debugSection: {
+    padding: 15,
     margin: 20,
+    backgroundColor: '#e7f3ff',
     borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#007AFF',
   },
-  testButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
+  debugTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#007AFF',
   },
-  smallTestButton: {
-    backgroundColor: '#5856D6',
-    padding: 10,
-    borderRadius: 6,
-    margin: 5,
-    flex: 1,
-    minWidth: 100,
-    alignItems: 'center',
-  },
-  smallTestButtonText: {
-    color: '#fff',
+  debugText: {
     fontSize: 12,
-    fontWeight: '600',
-    textAlign: 'center',
+    color: '#666',
+    marginBottom: 3,
+    fontFamily: 'monospace',
   },
 });
 

@@ -1,67 +1,101 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Storage, STORAGE_KEYS } from '../utils/storage';
+import { useState, useCallback, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // FIX: Ganti Storage
+import { STORAGE_KEYS } from '../utils/storage';
 
-export const useCart = () => {
-  const [cart, setCart] = useState<any[]>([]);
+interface CartItem {
+  id: number;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+const useCart = () => {
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Load cart on app start
+  // Load cart items on mount
   useEffect(() => {
-    const loadCart = async () => {
-      try {
-        setLoading(true);
-        const cartData = await Storage.getItem<any[]>(STORAGE_KEYS.CART_DATA);
-        setCart(cartData || []);
-      } catch (error) {
-        console.error('Error loading cart:', error);
-        setCart([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadCart();
+    loadCartItems();
   }, []);
 
-  const updateCart = useCallback(async (newCart: any[]) => {
+  const loadCartItems = useCallback(async () => {
     try {
-      // Use mergeItem for small updates to avoid quota exceeded
-      await Storage.mergeItem(STORAGE_KEYS.CART_DATA, newCart);
-      setCart(newCart);
-    } catch (error: any) {
-      if (error?.message?.includes('quota') || error?.message?.includes('exceeded')) {
-        console.warn('Storage quota exceeded, clearing cart cache');
-        // Handle quota exceeded by clearing some data
-        await Storage.removeItem(STORAGE_KEYS.CART_DATA);
-        setCart([]);
-      } else {
-        console.error('Error updating cart:', error);
-        throw error;
+      setLoading(true);
+      // FIX: Ganti Storage dengan AsyncStorage
+      const cartString = await AsyncStorage.getItem(STORAGE_KEYS.CART_ITEMS);
+      if (cartString) {
+        const items = JSON.parse(cartString) as CartItem[];
+        setCartItems(items);
       }
+    } catch (error) {
+      console.error('Failed to load cart items:', error);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
-  const addToCart = useCallback(async (product: any) => {
-    const newCart = [...cart, product];
-    await updateCart(newCart);
-  }, [cart, updateCart]);
-
-  const removeFromCart = useCallback(async (productId: string) => {
-    const newCart = cart.filter(item => item.id !== productId);
-    await updateCart(newCart);
-  }, [cart, updateCart]);
-
-  const clearCart = useCallback(async () => {
-    await Storage.removeItem(STORAGE_KEYS.CART_DATA);
-    setCart([]);
+  const saveCartItems = useCallback(async (items: CartItem[]) => {
+    try {
+      // FIX: Ganti Storage dengan AsyncStorage
+      await AsyncStorage.setItem(STORAGE_KEYS.CART_ITEMS, JSON.stringify(items));
+      setCartItems(items);
+    } catch (error) {
+      console.error('Failed to save cart items:', error);
+    }
   }, []);
 
+  const addToCart = useCallback(async (productId: number, productName: string, price: number) => {
+    const existingItem = cartItems.find(item => item.id === productId);
+    
+    let updatedItems: CartItem[];
+    if (existingItem) {
+      updatedItems = cartItems.map(item =>
+        item.id === productId ? { ...item, quantity: item.quantity + 1 } : item
+      );
+    } else {
+      const newItem: CartItem = {
+        id: productId,
+        name: productName,
+        price: price,
+        quantity: 1
+      };
+      updatedItems = [...cartItems, newItem];
+    }
+    
+    await saveCartItems(updatedItems);
+  }, [cartItems, saveCartItems]);
+
+  const removeFromCart = useCallback(async (productId: number) => {
+    const updatedItems = cartItems.filter(item => item.id !== productId);
+    await saveCartItems(updatedItems);
+  }, [cartItems, saveCartItems]);
+
+  const updateQuantity = useCallback(async (productId: number, quantity: number) => {
+    const updatedItems = cartItems.map(item =>
+      item.id === productId ? { ...item, quantity } : item
+    ).filter(item => item.quantity > 0);
+    
+    await saveCartItems(updatedItems);
+  }, [cartItems, saveCartItems]);
+
+  const clearCart = useCallback(async () => {
+    await saveCartItems([]);
+  }, [saveCartItems]);
+
+  const getTotalPrice = useCallback(() => {
+    return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+  }, [cartItems]);
+
   return {
-    cart,
+    cartItems,
     loading,
-    updateCart,
     addToCart,
     removeFromCart,
+    updateQuantity,
     clearCart,
+    getTotalPrice,
+    refresh: loadCartItems
   };
 };
+
+export default useCart;

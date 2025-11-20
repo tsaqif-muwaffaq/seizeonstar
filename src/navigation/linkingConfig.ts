@@ -1,6 +1,6 @@
 import { LinkingOptions } from '@react-navigation/native';
-import { RootStackParamList } from '../types';
 import { Linking } from 'react-native';
+import { RootStackParamList } from '../types';
 
 // Deep linking configuration
 export const linkingConfig: LinkingOptions<RootStackParamList> = {
@@ -30,8 +30,22 @@ export const linkingConfig: LinkingOptions<RootStackParamList> = {
         },
       },
       
-      // Cart route
+      // Cart routes - FIX: Simplified structure
       Cart: 'keranjang',
+
+      // Add to cart direct action - FIX: Separate route
+      AddToCart: {
+        path: 'add-to-cart/:productId',
+        parse: {
+          productId: (productId: string) => {
+            const parsedId = parseInt(productId, 10);
+            return isNaN(parsedId) ? 0 : parsedId;
+          },
+        },
+      },
+      
+      // Checkout route
+      Checkout: 'checkout',
       
       // Profile route with user validation
       Profile: {
@@ -55,11 +69,15 @@ export const linkingConfig: LinkingOptions<RootStackParamList> = {
   // Custom function to handle dynamic links
   async getInitialURL() {
     // Handle cold start - app launched from closed state
-    const url = await Linking.getInitialURL();
-    
-    if (url) {
-      console.log('App opened with URL:', url);
-      return url;
+    try {
+      const url = await Linking.getInitialURL();
+      
+      if (url) {
+        console.log('App opened with URL:', url);
+        return url;
+      }
+    } catch (error) {
+      console.error('Error getting initial URL:', error);
     }
     
     return null;
@@ -86,6 +104,8 @@ export const DEEP_LINK_PATTERNS = {
   HOME: /^(ecommerceapp:\/\/|https:\/\/ecommerceapp\.com\/)home\/?$/,
   PRODUCT: /^(ecommerceapp:\/\/|https:\/\/ecommerceapp\.com\/)produk\/(\d+)\/?$/,
   CART: /^(ecommerceapp:\/\/|https:\/\/ecommerceapp\.com\/)keranjang\/?$/,
+  ADD_TO_CART: /^(ecommerceapp:\/\/|https:\/\/ecommerceapp\.com\/)add-to-cart\/(\d+)\/?$/,
+  CHECKOUT: /^(ecommerceapp:\/\/|https:\/\/ecommerceapp\.com\/)checkout\/?$/,
   PROFILE: /^(ecommerceapp:\/\/|https:\/\/ecommerceapp\.com\/)profil\/([a-zA-Z0-9_-]+)\/?$/,
 } as const;
 

@@ -1,95 +1,36 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
 export const STORAGE_KEYS = {
+  // Auth
   AUTH_TOKEN: '@app:auth_token',
+  TOKEN_EXPIRY: '@app:token_expiry',
   USER_DATA: '@app:user_data',
+  
+  // Cart & Wishlist
+  CART_ITEMS: '@app:cart_items',
   CART_DATA: '@app:cart_data',
-  CART_ITEMS: '@app:cart_items', // TAMBAHKAN INI
+  WISHLIST_ITEMS: '@app:wishlist_items',
+  WISHLIST_META: '@app:wishlist_meta',
+  
+  // Cache
   CATEGORIES_CACHE: '@app:categories_cache',
   THEME_PREFERENCE: '@app:theme_preference',
   NOTIFICATION_STATUS: '@app:notification_status',
+  
+  // Product Cache (dynamic)
+  PRODUCT_CACHE_PREFIX: '@product_detail:',
 } as const;
 
-export const Storage = {
-  setItem: async (key: string, value: any): Promise<void> => {
-    try {
-      const stringValue = JSON.stringify(value);
-      await AsyncStorage.setItem(key, stringValue);
-    } catch (error) {
-      console.error(`Error saving ${key}:`, error);
-      throw error;
-    }
-  },
+// Helper to create product cache key
+export const getProductCacheKey = (productId: number): string => {
+  return `${STORAGE_KEYS.PRODUCT_CACHE_PREFIX}${productId}`;
+};
 
-  getItem: async <T>(key: string): Promise<T | null> => {
-    try {
-      const value = await AsyncStorage.getItem(key);
-      return value ? JSON.parse(value) : null;
-    } catch (error) {
-      console.error(`Error reading ${key}:`, error);
-      return null;
-    }
-  },
-
-  removeItem: async (key: string): Promise<void> => {
-    try {
-      await AsyncStorage.removeItem(key);
-    } catch (error) {
-      console.error(`Error removing ${key}:`, error);
-      throw error;
-    }
-  },
-
-  multiGet: async (keys: string[]): Promise<[string, any][]> => {
-    try {
-      const keyValuePairs = await AsyncStorage.multiGet(keys);
-      return keyValuePairs.map(([key, value]) => {
-        return [key, value ? JSON.parse(value) : null];
-      });
-    } catch (error) {
-      console.error('Error in multiGet:', error);
-      throw error;
-    }
-  },
-
-  multiSet: async (keyValuePairs: [string, any][]): Promise<void> => {
-    try {
-      const stringPairs = keyValuePairs.map(([key, value]) => [
-        key,
-        JSON.stringify(value)
-      ]) as [string, string][];
-      await AsyncStorage.multiSet(stringPairs);
-    } catch (error) {
-      console.error('Error in multiSet:', error);
-      throw error;
-    }
-  },
-
-  multiRemove: async (keys: string[]): Promise<void> => {
-    try {
-      await AsyncStorage.multiRemove(keys);
-    } catch (error) {
-      console.error('Error in multiRemove:', error);
-      throw error;
-    }
-  },
-
-  mergeItem: async (key: string, value: any): Promise<void> => {
-    try {
-      const stringValue = JSON.stringify(value);
-      await AsyncStorage.mergeItem(key, stringValue);
-    } catch (error) {
-      console.error(`Error merging ${key}:`, error);
-      throw error;
-    }
-  },
-
-  clear: async (): Promise<void> => {
-    try {
-      await AsyncStorage.clear();
-    } catch (error) {
-      console.error('Error clearing storage:', error);
-      throw error;
-    }
-  },
+// Helper to extract product ID from cache key
+export const getProductIdFromCacheKey = (key: string): number | null => {
+  const prefix = STORAGE_KEYS.PRODUCT_CACHE_PREFIX;
+  if (key.startsWith(prefix)) {
+    const id = key.slice(prefix.length);
+    const parsedId = parseInt(id, 10);
+    return isNaN(parsedId) ? null : parsedId;
+  }
+  return null;
 };
