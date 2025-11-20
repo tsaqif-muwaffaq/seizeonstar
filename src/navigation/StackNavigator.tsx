@@ -120,7 +120,7 @@ import { CheckoutScreen } from '../screens/CheckoutScreen';
 import { AnalyticsScreen } from '../screens/AnalyticsScreen';
 import  LoginScreen  from '../screens/LoginScreen';
 import { ProductListScreen } from '../screens/ProductListScreen';
-import { CartScreen } from '../screens/CartScreen';
+import  CartScreen  from '../screens/CartScreen';
 import { useAuthContext } from '../context/AuthContext';
 import { LoadingIndicator } from '../components/LoadingIndicator';
 import { View } from 'react-native';

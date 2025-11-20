@@ -5,7 +5,7 @@ import TabNavigator from './TabNavigator';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { AnalyticsScreen } from '../screens/AnalyticsScreen';
 import { ProductListScreen } from '../screens/ProductListScreen';
-import { CartScreen } from '../screens/CartScreen';
+import  CartScreen  from '../screens/CartScreen';
 import { CustomDrawerContent } from '../components/CustomDrawerContent';
 import { useCurrentRoute } from '../hooks/useNavigationState';
 
