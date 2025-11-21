@@ -1,18 +1,18 @@
 import * as React from 'react';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import ErrorBoundary from './src/components/ErrorBoundary';
+import { StatusBar } from 'react-native';
+import { AuthProvider } from './src/context/AuthContext';
 import RootNavigator from './src/navigation/RootNavigator';
 
-const App = () => {
+const App: React.FC = () => {
   return (
-    <ErrorBoundary>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <SafeAreaProvider>
-          <RootNavigator />
-        </SafeAreaProvider>
-      </GestureHandlerRootView>
-    </ErrorBoundary>
+    <AuthProvider>
+      <StatusBar 
+        barStyle="dark-content" 
+        backgroundColor="transparent" 
+        translucent 
+      />
+      <RootNavigator />
+    </AuthProvider>
   );
 };
 

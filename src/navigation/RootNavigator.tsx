@@ -4,7 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { ActivityIndicator, View, Text, Linking } from 'react-native';
-import useAuth from '../hooks/useAuth';
+import { useAuthContext } from '../context/AuthContext';
 import linkingConfig from './linkingConfig';
 import DeepLinkService from '../services/deepLinkService';
 
@@ -16,6 +16,9 @@ import ProductScreen from '../screens/ProductScreen';
 import CartScreen from '../screens/CartScreen';
 import CheckoutScreen from '../screens/CheckoutScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import ProductUploadScreen from '../screens/ProductUploadScreen';
+import ProfileImageScreen from '../screens/ProfileImageScreen';
+import ProductListScreen from '../screens/ProductListScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -34,7 +37,7 @@ const AppTabs = () => {
       }}
     >
       <Tab.Screen 
-        name="Home" 
+        name="HomeTab" 
         component={HomeScreen}
         options={{
           title: 'Home',
@@ -42,7 +45,15 @@ const AppTabs = () => {
         }}
       />
       <Tab.Screen 
-        name="Cart" 
+        name="ProductsTab" 
+        component={ProductListScreen}
+        options={{
+          title: 'Products',
+          tabBarLabel: 'Products',
+        }}
+      />
+      <Tab.Screen 
+        name="CartTab" 
         component={CartScreen}
         options={{
           title: 'Cart',
@@ -50,7 +61,7 @@ const AppTabs = () => {
         }}
       />
       <Tab.Screen 
-        name="Profile" 
+        name="ProfileTab" 
         component={ProfileScreen}
         options={{
           title: 'Profile',
@@ -70,7 +81,7 @@ const LoadingScreen = () => (
 );
 
 const RootNavigator = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuthContext();
   
   const navigationRef = useRef<any>(null);
 
@@ -123,6 +134,8 @@ const RootNavigator = () => {
           // Authenticated flow
           <>
             <Stack.Screen name="AppTabs" component={AppTabs} />
+            
+            {/* Product Related Screens */}
             <Stack.Screen 
               name="Product" 
               component={ProductScreen}
@@ -133,6 +146,27 @@ const RootNavigator = () => {
                 presentation: 'card'
               }}
             />
+            <Stack.Screen 
+              name="ProductList" 
+              component={ProductListScreen}
+              options={{ 
+                headerShown: true, 
+                title: 'All Products',
+                headerBackTitle: 'Back'
+              }}
+            />
+            <Stack.Screen 
+              name="ProductUpload" 
+              component={ProductUploadScreen}
+              options={{ 
+                headerShown: true, 
+                title: 'Upload Product',
+                headerBackTitle: 'Back',
+                presentation: 'modal'
+              }}
+            />
+
+            {/* Cart & Checkout */}
             <Stack.Screen 
               name="Cart" 
               component={CartScreen}
@@ -151,6 +185,8 @@ const RootNavigator = () => {
                 headerBackTitle: 'Back'
               }}
             />
+
+            {/* Profile & Image Picker Screens */}
             <Stack.Screen 
               name="Profile" 
               component={ProfileScreen}
@@ -160,11 +196,27 @@ const RootNavigator = () => {
                 headerBackTitle: 'Back'
               }}
             />
+            <Stack.Screen 
+              name="ProfileImage" 
+              component={ProfileImageScreen}
+              options={{ 
+                headerShown: true, 
+                title: 'Profile Photo',
+                headerBackTitle: 'Back',
+                presentation: 'modal'
+              }}
+            />
           </>
         ) : (
           // Unauthenticated flow
           <>
-            <Stack.Screen name="Splash" component={SplashScreen} />
+            <Stack.Screen 
+              name="Splash" 
+              component={SplashScreen}
+              options={{
+                animation: 'fade'
+              }}
+            />
             <Stack.Screen 
               name="Login" 
               component={LoginScreen}

@@ -1,81 +1,116 @@
 import { useState, useCallback, useEffect } from 'react';
-import StorageService, { WishlistMeta } from '../services/storageService';
-import ErrorHandler from '../utils/errorHandler';
+import { storageService } from '../services/storageService';
+import { WishlistItem, WishlistMeta, Product } from '../types';
 
-const useWishlist = () => {
-  const [wishlist, setWishlist] = useState<number[]>([]);
-  const [meta, setMeta] = useState<WishlistMeta | null>(null);
+export const useWishlist = () => {
+  const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Load wishlist on mount
-  useEffect(() => {
-    loadWishlist();
-  }, []);
+  const [error, setError] = useState<string | null>(null);
 
   const loadWishlist = useCallback(async () => {
     try {
       setLoading(true);
-      const { items, meta } = await StorageService.loadWishlist();
-      setWishlist(items);
-      setMeta(meta);
-    } catch (error) {
-      ErrorHandler.handle(error, 'loading wishlist');
+      setError(null);
+      const stored = await storageService.getItem('@ecom:wishlist');
+      
+      if (stored) {
+        const parsedWishlist = JSON.parse(stored) as WishlistItem[];
+        setWishlist(parsedWishlist);
+      } else {
+        setWishlist([]);
+      }
+    } catch (err) {
+      setError('Gagal memuat wishlist');
+      console.error('Error loading wishlist:', err);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const toggleWishlistItem = useCallback(async (productId: number) => {
+  const saveWishlist = useCallback(async (newWishlist: WishlistItem[]): Promise<boolean> => {
     try {
-      const newWishlist = wishlist.includes(productId)
-        ? wishlist.filter(id => id !== productId)
-        : [...wishlist, productId];
-
-      const newMeta: WishlistMeta = {
+      setError(null);
+      await storageService.setItem('@ecom:wishlist', JSON.stringify(newWishlist));
+      
+      // Update wishlist meta
+      const meta: WishlistMeta = {
         count: newWishlist.length,
-        updatedAt: Date.now(),
-        lastSync: Date.now()
+        lastUpdated: Date.now(),
       };
-
-      await StorageService.saveWishlist(newWishlist, newMeta);
+      await storageService.setItem('@ecom:wishlist_meta', JSON.stringify(meta));
       
       setWishlist(newWishlist);
-      setMeta(newMeta);
-
-      return !wishlist.includes(productId); // Return new state (true = added, false = removed)
-    } catch (error) {
-      ErrorHandler.handle(error, 'toggling wishlist item');
-      return wishlist.includes(productId); // Return current state on error
-    }
-  }, [wishlist]);
-
-  const isInWishlist = useCallback((productId: number): boolean => {
-    return wishlist.includes(productId);
-  }, [wishlist]);
-
-  const clearWishlist = useCallback(async () => {
-    try {
-      const emptyMeta: WishlistMeta = {
-        count: 0,
-        updatedAt: Date.now()
-      };
-      
-      await StorageService.saveWishlist([], emptyMeta);
-      setWishlist([]);
-      setMeta(emptyMeta);
-    } catch (error) {
-      ErrorHandler.handle(error, 'clearing wishlist');
+      return true;
+    } catch (err) {
+      setError('Gagal menyimpan wishlist');
+      console.error('Error saving wishlist:', err);
+      return false;
     }
   }, []);
 
+  const addToWishlist = useCallback(async (productId: string): Promise<boolean> => {
+    try {
+      const existingItem = wishlist.find(item => item.productId === productId);
+      if (existingItem) {
+        return true; // Already in wishlist
+      }
+
+      const newItem: WishlistItem = {
+        productId,
+        addedAt: Date.now(),
+      };
+
+      const newWishlist = [...wishlist, newItem];
+      return await saveWishlist(newWishlist);
+    } catch (err) {
+      setError('Gagal menambahkan ke wishlist');
+      console.error('Error adding to wishlist:', err);
+      return false;
+    }
+  }, [wishlist, saveWishlist]);
+
+  const removeFromWishlist = useCallback(async (productId: string): Promise<boolean> => {
+    try {
+      const newWishlist = wishlist.filter(item => item.productId !== productId);
+      return await saveWishlist(newWishlist);
+    } catch (err) {
+      setError('Gagal menghapus dari wishlist');
+      console.error('Error removing from wishlist:', err);
+      return false;
+    }
+  }, [wishlist, saveWishlist]);
+
+  const isInWishlist = useCallback((productId: string): boolean => {
+    return wishlist.some(item => item.productId === productId);
+  }, [wishlist]);
+
+  const clearWishlist = useCallback(async (): Promise<boolean> => {
+    try {
+      await storageService.removeItem('@ecom:wishlist');
+      await storageService.removeItem('@ecom:wishlist_meta');
+      setWishlist([]);
+      return true;
+    } catch (err) {
+      setError('Gagal menghapus wishlist');
+      console.error('Error clearing wishlist:', err);
+      return false;
+    }
+  }, []);
+
+  useEffect(() => {
+    loadWishlist();
+  }, [loadWishlist]);
+
   return {
     wishlist,
-    meta,
     loading,
-    toggleWishlistItem,
+    error,
+    addToWishlist,
+    removeFromWishlist,
     isInWishlist,
     clearWishlist,
-    refresh: loadWishlist
+    refresh: loadWishlist,
+    count: wishlist.length,
   };
 };
 

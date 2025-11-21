@@ -4,7 +4,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import  HomeScreen  from '../screens/HomeScreen';
 import  ProfileScreen  from '../screens/ProfileScreen';
 import { AnalyticsScreen } from '../screens/AnalyticsScreen';
-import { ProductListScreen } from '../screens/ProductListScreen';
+import  ProductListScreen  from '../screens/ProductListScreen';
 import  CartScreen  from '../screens/CartScreen';
 
 const Tab = createBottomTabNavigator();

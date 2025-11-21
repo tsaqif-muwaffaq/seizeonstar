@@ -1,259 +1,139 @@
 import * as React from 'react';
-import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  FlatList,
+  Image,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useApi } from '../hooks/useApi';
-import { useNetInfo } from '../hooks/useNetInfo';
-import { NetworkStatus } from '../components/NetworkStatus';
-import { LoadingIndicator } from '../components/LoadingIndicator';
-import { Product, LegacyProduct } from '../types/Product';
-import { globalStyles } from '../styles/globalStyles';
-import { useCategoriesCache } from '../hooks/useCache';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../types';
 
-interface ProductsResponse {
-  products: Product[];
-  total: number;
-  skip: number;
-  limit: number;
-}
+type ProductListScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'ProductList'>;
 
-export const ProductListScreen: React.FC = () => {
-  const navigation = useNavigation<any>();
-  const { isConnected, isInternetReachable } = useNetInfo();
-  
-  const { data, loading, error, refetch } = useApi<ProductsResponse>(
-    '/products?limit=20',
-    { immediate: true, timeout: 7000 }
-  );
+const ProductListScreen: React.FC = () => {
+  const navigation = useNavigation<ProductListScreenNavigationProp>();
 
-  // Cache untuk categories - BARU DITAMBAH
-  const { data: cachedCategories, loading: categoriesLoading } = useCategoriesCache(
-    async () => {
-      try {
-        const response = await fetch('https://dummyjson.com/products/categories');
-        const categories = await response.json();
-        return categories;
-      } catch (err) {
-        console.error('Error fetching categories:', err);
-        return [];
-      }
-    }
-  );
+  // Sample products data
+  const products = [
+    {
+      id: '1',
+      name: 'Nike Air Max',
+      price: 'Rp 1.299.000',
+      image: 'https://via.placeholder.com/150',
+    },
+    {
+      id: '2',
+      name: 'Adidas Ultraboost',
+      price: 'Rp 1.499.000',
+      image: 'https://via.placeholder.com/150',
+    },
+    {
+      id: '3',
+      name: 'Puma RS-X',
+      price: 'Rp 899.000',
+      image: 'https://via.placeholder.com/150',
+    },
+    {
+      id: '4',
+      name: 'New Balance 574',
+      price: 'Rp 799.000',
+      image: 'https://via.placeholder.com/150',
+    },
+  ];
 
-  const isOnline = isConnected && isInternetReachable;
-
-  const handleProductPress = (product: Product) => {
-    const legacyProduct: LegacyProduct = {
-      id: product.id.toString(),
-      name: product.title,
-      price: product.price,
-      imageUrl: product.thumbnail,
-      description: product.description,
-    };
-    navigation.navigate('ProductDetail', { product: legacyProduct });
-  };
-
-  const handleRetry = () => {
-    refetch();
-  };
-
-  const renderProductItem = ({ item }: { item: Product }) => (
+  const renderProductItem = ({ item }: { item: any }) => (
     <TouchableOpacity 
       style={styles.productCard}
-      onPress={() => handleProductPress(item)}
-      activeOpacity={0.7}
+      onPress={() => navigation.navigate('Product', { productId: item.id })}
     >
-      <Image source={{ uri: item.thumbnail }} style={styles.productImage} />
-      <View style={styles.productInfo}>
-        <Text style={styles.productName} numberOfLines={2}>{item.title}</Text>
-        <Text style={styles.productBrand}>{item.brand}</Text>
-        <Text style={styles.productPrice}>${item.price}</Text>
-        <Text style={styles.productRating}>⭐ {item.rating}</Text>
-      </View>
+      <Image source={{ uri: item.image }} style={styles.productImage} />
+      <Text style={styles.productName}>{item.name}</Text>
+      <Text style={styles.productPrice}>{item.price}</Text>
     </TouchableOpacity>
   );
 
-  // Show network status
-  if (!isOnline) {
-    return (
-      <View style={globalStyles.container}>
-        <NetworkStatus />
-        <View style={styles.offlineContainer}>
-          <Text style={styles.offlineTitle}>📶 Offline</Text>
-          <Text style={styles.offlineText}>
-            Anda sedang Offline. Cek koneksi Anda.
-            {cachedCategories && `\n\n${cachedCategories.length} kategori tersedia dari cache.`}
-          </Text>
-          <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
-            <Text style={styles.retryButtonText}>Coba Lagi</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
-
-  // Show loading
-  if (loading) {
-    return (
-      <View style={globalStyles.container}>
-        <NetworkStatus />
-        <LoadingIndicator text="Memuat produk..." />
-      </View>
-    );
-  }
-
-  // Show error
-  if (error) {
-    return (
-      <View style={globalStyles.container}>
-        <NetworkStatus />
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorTitle}>❌ Error</Text>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
-            <Text style={styles.retryButtonText}>Coba Lagi</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
-
   return (
-    <View style={globalStyles.container}>
-      <NetworkStatus />
-      
+    <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Daftar Produk</Text>
-        <Text style={styles.subtitle}>
-          {data?.products.length || 0} produk ditemukan
-          {cachedCategories && ` • ${cachedCategories.length} kategori tersedia`}
-        </Text>
+        <Text style={styles.title}>Products</Text>
+        <TouchableOpacity 
+          style={styles.uploadButton}
+          onPress={() => navigation.navigate('ProductUpload')}
+        >
+          <Text style={styles.uploadButtonText}>+ Upload Product</Text>
+        </TouchableOpacity>
       </View>
 
       <FlatList
-        data={data?.products || []}
+        data={products}
         renderItem={renderProductItem}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={item => item.id}
+        numColumns={2}
+        contentContainerStyle={styles.productsList}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
-        refreshing={loading}
-        onRefresh={refetch}
       />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  header: {
+  container: {
+    flex: 1,
+    backgroundColor: 'white',
     padding: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
-    textAlign: 'center',
   },
-  subtitle: {
+  uploadButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  uploadButtonText: {
+    color: 'white',
     fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    marginTop: 4,
+    fontWeight: '600',
   },
-  listContent: {
-    padding: 8,
+  productsList: {
+    paddingBottom: 20,
   },
   productCard: {
-    backgroundColor: '#fff',
+    flex: 1,
+    backgroundColor: '#F8F9FA',
     borderRadius: 12,
-    margin: 8,
     padding: 12,
-    flexDirection: 'row',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 6,
-    elevation: 3,
+    margin: 6,
+    alignItems: 'center',
   },
   productImage: {
-    width: 80,
-    height: 80,
+    width: 100,
+    height: 100,
     borderRadius: 8,
-    marginRight: 12,
-  },
-  productInfo: {
-    flex: 1,
-    justifyContent: 'center',
+    marginBottom: 8,
   },
   productName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  productBrand: {
     fontSize: 14,
-    color: '#666',
+    fontWeight: '600',
+    textAlign: 'center',
     marginBottom: 4,
   },
   productPrice: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2196F3',
-    marginBottom: 4,
-  },
-  productRating: {
     fontSize: 12,
-    color: '#FF9800',
-  },
-  offlineContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  offlineTitle: {
-    fontSize: 24,
+    color: '#007AFF',
     fontWeight: 'bold',
-    color: '#666',
-    marginBottom: 12,
-  },
-  offlineText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 20,
-    lineHeight: 22,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#F44336',
-    marginBottom: 12,
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 20,
-    lineHeight: 22,
-  },
-  retryButton: {
-    backgroundColor: '#2196F3',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
   },
 });
+
+export default ProductListScreen;

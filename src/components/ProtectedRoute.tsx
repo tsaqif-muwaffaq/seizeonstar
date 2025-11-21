@@ -1,83 +1,72 @@
 import * as React from 'react';
-import { useState, useEffect } from 'react';
-import { View, ActivityIndicator, Text } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import TokenManager from '../utils/tokenManager';
-import { RootStackParamList } from '../types';
+import { useAuthContext } from '../context/AuthContext';
+import { useNavigation } from '@react-navigation/native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  fallback?: React.ReactNode;
 }
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+  const { isAuthenticated } = useAuthContext();
+  const navigation = useNavigation();
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
-  children, 
-  fallback 
-}) => {
-  const navigation = useNavigation<NavigationProp>();
-  const route = useRoute();
-  const [isChecking, setIsChecking] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    checkAuthentication();
-  }, []);
-
-  const checkAuthentication = async () => {
-    try {
-      setIsChecking(true);
-      
-      const token = await TokenManager.getToken();
-      const isExpired = await TokenManager.isTokenExpired();
-      
-      if (!token || isExpired) {
-        console.log('Authentication required, redirecting to login');
-        
-        // Store the intended route for redirect after login
-        const currentRoute = route.name;
-        const params = (route.params as any) || {};
-        
-        navigation.reset({
-          index: 0,
-          routes: [{ 
-            name: 'Login', 
-            params: { 
-              redirectTo: currentRoute as keyof RootStackParamList,
-              redirectParams: params
-            }
-          }],
-        });
-        
-        setIsAuthenticated(false);
-      } else {
-        setIsAuthenticated(true);
-      }
-    } catch (error) {
-      console.error('Error checking authentication:', error);
-      setIsAuthenticated(false);
-      navigation.navigate('Login');
-    } finally {
-      setIsChecking(false);
+  React.useEffect(() => {
+    if (!isAuthenticated) {
+      // Redirect to login if not authenticated
+      navigation.navigate('Login' as never);
     }
-  };
+  }, [isAuthenticated, navigation]);
 
-  if (isChecking) {
+  if (!isAuthenticated) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={{ marginTop: 10, color: '#666' }}>Checking authentication...</Text>
+      <View style={styles.container}>
+        <Text style={styles.title}>Akses Ditolak</Text>
+        <Text style={styles.message}>Anda harus login untuk mengakses halaman ini</Text>
+        <TouchableOpacity 
+          style={styles.button}
+          onPress={() => navigation.navigate('Login' as never)}
+        >
+          <Text style={styles.buttonText}>Login</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
-  if (!isAuthenticated) {
-    return fallback ? <>{fallback}</> : null;
-  }
-
   return <>{children}</>;
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: 'white',
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#333',
+  },
+  message: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+    color: '#666',
+  },
+  button: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
 
 export default ProtectedRoute;

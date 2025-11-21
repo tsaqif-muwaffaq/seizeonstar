@@ -1,20 +1,37 @@
 import * as React from 'react';
-import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
+import {
+  View,
+  ActivityIndicator,
+  Text,
+  StyleSheet,
+  Modal,
+} from 'react-native';
 
 interface LoadingIndicatorProps {
-  size?: 'small' | 'large';
+  visible: boolean;
   text?: string;
 }
 
-export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({ 
-  size = 'large', 
-  text = 'Loading...' 
+const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
+  visible,
+  text = 'Memproses...',
 }) => {
+  if (!visible) return null;
+
   return (
-    <View style={styles.container}>
-      <ActivityIndicator size={size} color="#2196F3" />
-      <Text style={styles.text}>{text}</Text>
-    </View>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+    >
+      <View style={styles.container}>
+        <View style={styles.loadingBox}>
+          <ActivityIndicator size="large" color="#007AFF" />
+          <Text style={styles.loadingText}>{text}</Text>
+        </View>
+      </View>
+    </Modal>
   );
 };
 
@@ -23,12 +40,20 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
-  text: {
-    marginTop: 12,
-    fontSize: 16,
+  loadingBox: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    minWidth: 120,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 14,
     color: '#666',
-    textAlign: 'center',
   },
 });
+
+export default LoadingIndicator;
