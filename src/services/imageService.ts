@@ -1,71 +1,74 @@
-import { ImageAsset, UploadProgress } from '../types';
 import { storageService } from './storageService';
 
-export class ImageService {
-  static async uploadImages(
-    assets: ImageAsset[], 
-    endpoint: string,
-    onProgress?: (progress: UploadProgress) => void
-  ): Promise<any> {
-    const formData = new FormData();
-    
-    assets.forEach((asset, index) => {
-      formData.append('images', {
-        uri: asset.uri,
-        type: asset.type || 'image/jpeg',
-        name: asset.fileName || `image_${Date.now()}_${index}.jpg`,
-      } as any);
-    });
+export interface ImageData {
+  id: string;
+  uri: string;
+  base64?: string;
+  timestamp: number;
+}
 
+class ImageService {
+  private readonly IMAGE_STORAGE_KEY = 'user_images';
+
+  async saveImage(imageData: ImageData): Promise<boolean> {
     try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Upload failed with status: ${response.status}`);
-      }
-
-      return await response.json();
+      const existingImages = await this.getImages();
+      const updatedImages = [...existingImages, imageData];
+      
+      // Simpan sebagai JSON string
+      const result = await storageService.saveCredentials(
+        this.IMAGE_STORAGE_KEY, 
+        JSON.stringify(updatedImages)
+      );
+      return result;
     } catch (error) {
-      console.error('Image upload error:', error);
-      throw error;
+      console.error('Error saving image:', error);
+      return false;
     }
   }
 
-  static async saveProductImagesToStorage(assets: ImageAsset[]): Promise<void> {
-    const productAssets = assets.map(asset => ({
-      uri: asset.uri,
-      fileName: asset.fileName || `image_${Date.now()}.jpg`,
-      timestamp: Date.now(),
-    }));
-
-    await storageService.setItem('@ecom:newProductAssets', JSON.stringify(productAssets));
-  }
-
-  static async getProductImagesFromStorage(): Promise<any[]> {
+  async getImages(): Promise<ImageData[]> {
     try {
-      const stored = await storageService.getItem('@ecom:newProductAssets');
-      return stored ? JSON.parse(stored) : [];
+      const credentials = await storageService.getCredentials();
+      if (credentials && credentials.username === this.IMAGE_STORAGE_KEY) {
+        return JSON.parse(credentials.password);
+      }
+      return [];
     } catch (error) {
-      console.error('Error getting product images from storage:', error);
+      console.error('Error getting images:', error);
       return [];
     }
   }
 
-  static async saveBase64Preview(asset: ImageAsset, key: string): Promise<void> {
-    if (asset.base64) {
-      await storageService.setItem(key, asset.base64);
+  async deleteImage(imageId: string): Promise<boolean> {
+    try {
+      const existingImages = await this.getImages();
+      const updatedImages = existingImages.filter(img => img.id !== imageId);
+      
+      const result = await storageService.saveCredentials(
+        this.IMAGE_STORAGE_KEY,
+        JSON.stringify(updatedImages)
+      );
+      return result;
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      return false;
     }
   }
 
-  static async getBase64Preview(key: string): Promise<string | null> {
-    return await storageService.getItem(key);
+  async clearAllImages(): Promise<boolean> {
+    try {
+      // Hanya hapus jika key adalah IMAGE_STORAGE_KEY
+      const credentials = await storageService.getCredentials();
+      if (credentials && credentials.username === this.IMAGE_STORAGE_KEY) {
+        return await storageService.clearCredentials();
+      }
+      return true;
+    } catch (error) {
+      console.error('Error clearing images:', error);
+      return false;
+    }
   }
 }
 
-export default ImageService;
+export const imageService = new ImageService();

@@ -1,72 +1,74 @@
 import * as React from 'react';
-import { useAuthContext } from '../context/AuthContext';
-import { useNavigation } from '@react-navigation/native';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, ActivityIndicator, StyleSheet, Alert } from 'react-native';
+import { useAuth } from '../hooks/useAuth';
+import { LoginScreen } from '../screens/LoginScreen';
+import { useBiometric } from '../hooks/useBiometric';
+import { Text } from 'react-native-gesture-handler';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated } = useAuthContext();
-  const navigation = useNavigation();
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+  const { isAuthenticated, hasStoredCredentials, forceLogout } = useAuth();
+  const { biometricInfo } = useBiometric();
+  const [isChecking, setIsChecking] = useState(true);
 
-  React.useEffect(() => {
-    if (!isAuthenticated) {
-      // Redirect to login if not authenticated
-      navigation.navigate('Login' as never);
+  useEffect(() => {
+    const checkAuth = async () => {
+      // Simulasi pengecekan auth state
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setIsChecking(false);
+    };
+
+    checkAuth();
+  }, []);
+
+  // Handle biometric lockout
+  useEffect(() => {
+    if (biometricInfo.error === 'LOCKED_OUT') {
+      Alert.alert(
+        'Keamanan',
+        'Terlalu banyak percobaan biometric gagal. Untuk keamanan, Anda harus login ulang.',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              forceLogout();
+            }
+          }
+        ]
+      );
     }
-  }, [isAuthenticated, navigation]);
+  }, [biometricInfo.error, forceLogout]);
 
-  if (!isAuthenticated) {
+  if (isChecking) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Akses Ditolak</Text>
-        <Text style={styles.message}>Anda harus login untuk mengakses halaman ini</Text>
-        <TouchableOpacity 
-          style={styles.button}
-          onPress={() => navigation.navigate('Login' as never)}
-        >
-          <Text style={styles.buttonText}>Login</Text>
-        </TouchableOpacity>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={styles.loadingText}>Memuat...</Text>
       </View>
     );
+  }
+
+  if (!isAuthenticated) {
+    return <LoginScreen />;
   }
 
   return <>{children}</>;
 };
 
 const styles = StyleSheet.create({
-  container: {
+  loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: 'white',
+    backgroundColor: '#FFFFFF',
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#333',
-  },
-  message: {
+  loadingText: {
+    marginTop: 10,
     fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#666',
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
+    color: '#666666',
   },
 });
-
-export default ProtectedRoute;

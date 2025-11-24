@@ -1,125 +1,81 @@
-import { useState, useEffect, useCallback } from 'react';
-import { AuthState, User } from '../types';
+import { useState, useCallback, useEffect } from 'react';
+import { authService } from '../services/authService'; // Pastikan nama file konsisten
 import { storageService } from '../services/storageService';
+import { User } from '../services/authService';
 
-const useAuth = () => {
-  const [authState, setAuthState] = useState<AuthState>({
-    user: null,
-    token: null,
-    isLoading: true,
-    isAuthenticated: false,
-  });
+export const useAuth = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasStoredCredentials, setHasStoredCredentials] = useState(false);
 
-  // Check authentication status on app start
-  useEffect(() => {
-    checkAuthStatus();
+  const checkStoredCredentials = useCallback(async () => {
+    const hasCredentials = await storageService.hasStoredCredentials();
+    setHasStoredCredentials(hasCredentials);
+    return hasCredentials;
   }, []);
 
-  const checkAuthStatus = async () => {
+  const loginManual = useCallback(async (username: string, password: string) => {
+    setIsLoading(true);
     try {
-      const token = await storageService.getItem('@ecom:authToken');
-      const userData = await storageService.getItem('@ecom:userData');
-
-      if (token && userData) {
-        const user: User = JSON.parse(userData);
-        setAuthState({
-          user,
-          token,
-          isLoading: false,
-          isAuthenticated: true,
-        });
-      } else {
-        setAuthState(prev => ({
-          ...prev,
-          isLoading: false,
-          isAuthenticated: false,
-        }));
+      const result = await authService.loginManual(username, password);
+      if (result.success && result.user) {
+        setUser(result.user);
+        setHasStoredCredentials(true);
       }
-    } catch (error) {
-      console.error('Error checking auth status:', error);
-      setAuthState(prev => ({
-        ...prev,
-        isLoading: false,
-        isAuthenticated: false,
-      }));
+      return result;
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
+  const loginWithBiometric = useCallback(async () => {
+    setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Demo user data
-      const user: User = {
-        id: '1',
-        email: email,
-        name: 'John Doe',
-        avatar: 'https://via.placeholder.com/100',
-      };
-
-      const token = 'demo-jwt-token-' + Date.now();
-
-      // Save to storage
-      await storageService.setItem('@ecom:authToken', token);
-      await storageService.setItem('@ecom:userData', JSON.stringify(user));
-
-      setAuthState({
-        user,
-        token,
-        isLoading: false,
-        isAuthenticated: true,
-      });
-
-      return { user, token };
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
+      const result = await authService.loginWithBiometric();
+      if (result.success && result.user) {
+        setUser(result.user);
+      }
+      return result;
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
   const logout = useCallback(async () => {
+    setIsLoading(true);
     try {
-      // Remove from storage
-      await storageService.removeItem('@ecom:authToken');
-      await storageService.removeItem('@ecom:userData');
-
-      setAuthState({
-        user: null,
-        token: null,
-        isLoading: false,
-        isAuthenticated: false,
-      });
-    } catch (error) {
-      console.error('Logout error:', error);
-      throw error;
+      await authService.logout();
+      setUser(null);
+      setHasStoredCredentials(false);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
-  const updateUser = useCallback(async (userData: Partial<User>) => {
-    try {
-      const updatedUser = { ...authState.user, ...userData } as User;
-      
-      await storageService.setItem('@ecom:userData', JSON.stringify(updatedUser));
-      
-      setAuthState(prev => ({
-        ...prev,
-        user: updatedUser,
-      }));
+  const forceLogout = useCallback(() => {
+    authService.forceLogout();
+    setUser(null);
+    setHasStoredCredentials(false);
+  }, []);
 
-      return updatedUser;
-    } catch (error) {
-      console.error('Update user error:', error);
-      throw error;
-    }
-  }, [authState.user]);
+  useEffect(() => {
+    const initAuth = async () => {
+      await checkStoredCredentials();
+      setIsLoading(false);
+    };
+
+    initAuth();
+  }, [checkStoredCredentials]);
 
   return {
-    ...authState,
-    login,
+    user,
+    isLoading,
+    hasStoredCredentials,
+    loginManual,
+    loginWithBiometric,
     logout,
-    updateUser,
+    forceLogout,
+    checkStoredCredentials,
+    isAuthenticated: !!user
   };
 };
-
-export default useAuth;

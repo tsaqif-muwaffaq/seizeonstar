@@ -1,73 +1,52 @@
 import * as React from 'react';
 import {
-  Modal,
   View,
   Text,
   TouchableOpacity,
+  Modal,
   StyleSheet,
-  Alert,
+  Alert
 } from 'react-native';
-import  useImagePicker  from '../hooks/useImagePicker';
-import { ImageAsset } from '../types';
+import { useImagePicker } from '../hooks/useImagePicker';
 
 interface ImagePickerModalProps {
   visible: boolean;
   onClose: () => void;
-  onImagesSelected: (assets: ImageAsset[]) => void;
-  selectionLimit?: number;
-  includeBase64?: boolean;
-  maxWidth?: number;
-  maxHeight?: number;
+  onImageSelected: (imageUri: string) => void;
 }
 
-const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
+export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
   visible,
   onClose,
-  onImagesSelected,
-  selectionLimit = 5,
-  includeBase64 = false,
-  maxWidth = 600,
-  maxHeight = 600,
+  onImageSelected
 }) => {
-  const { openCamera, openImageLibrary, selectedImages } = useImagePicker();
+  const { takePhoto, pickImage, isLoading } = useImagePicker();
 
-  const handleCameraPress = async () => {
-    try {
-      await openCamera({
-        mediaType: 'photo',
-        quality: 0.7,
-        maxWidth,
-        maxHeight,
-        includeBase64,
-        saveToPhotos: true,
-      });
+  const handleTakePhoto = async () => {
+    const result = await takePhoto({
+      mediaType: 'photo' as any,
+      includeBase64: true,
+      quality: 0.8 as any,
+    });
+
+    if (result && result.uri) {
+      onImageSelected(result.uri);
       onClose();
-    } catch (error) {
-      Alert.alert('Error', 'Gagal membuka kamera');
     }
   };
 
-  const handleGalleryPress = async () => {
-    try {
-      await openImageLibrary({
-        mediaType: 'photo',
-        quality: 0.7,
-        maxWidth,
-        maxHeight,
-        includeBase64,
-        selectionLimit,
-      });
+  const handlePickImage = async () => {
+    const result = await pickImage({
+      mediaType: 'photo' as any,
+      includeBase64: true,
+      quality: 0.8 as any,
+    });
+
+    if (result && result.uri) {
+      onImageSelected(result.uri);
       onClose();
-    } catch (error) {
-      Alert.alert('Error', 'Gagal membuka galeri');
     }
   };
-
-  React.useEffect(() => {
-    if (selectedImages.length > 0) {
-      onImagesSelected(selectedImages);
-    }
-  }, [selectedImages, onImagesSelected]);
 
   return (
     <Modal
@@ -80,15 +59,31 @@ const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
         <View style={styles.modalContent}>
           <Text style={styles.title}>Pilih Sumber Gambar</Text>
           
-          <TouchableOpacity style={styles.button} onPress={handleCameraPress}>
-            <Text style={styles.buttonText}>Kamera</Text>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={handleTakePhoto}
+            disabled={isLoading}
+          >
+            <Text style={styles.buttonText}>
+              {isLoading ? 'Loading...' : 'Ambil Foto'}
+            </Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.button} onPress={handleGalleryPress}>
-            <Text style={styles.buttonText}>Galeri</Text>
+
+          <TouchableOpacity
+            style={[styles.button, styles.galleryButton]}
+            onPress={handlePickImage}
+            disabled={isLoading}
+          >
+            <Text style={styles.buttonText}>
+              {isLoading ? 'Loading...' : 'Pilih dari Galeri'}
+            </Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onClose}>
+
+          <TouchableOpacity
+            style={[styles.button, styles.cancelButton]}
+            onPress={onClose}
+            disabled={isLoading}
+          >
             <Text style={styles.cancelButtonText}>Batal</Text>
           </TouchableOpacity>
         </View>
@@ -104,7 +99,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    backgroundColor: 'white',
+    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
@@ -115,28 +110,32 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 20,
+    color: '#1C1C1E',
   },
   button: {
     backgroundColor: '#007AFF',
     padding: 15,
     borderRadius: 10,
-    marginBottom: 10,
     alignItems: 'center',
+    marginBottom: 10,
+  },
+  galleryButton: {
+    backgroundColor: '#34C759',
+  },
+  cancelButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#DDDDDD',
+    marginTop: 10,
   },
   buttonText: {
-    color: 'white',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },
-  cancelButton: {
-    backgroundColor: '#F2F2F7',
-    marginTop: 10,
-  },
   cancelButtonText: {
-    color: '#007AFF',
+    color: '#FF3B30',
     fontSize: 16,
     fontWeight: '600',
   },
 });
-
-export default ImagePickerModal;

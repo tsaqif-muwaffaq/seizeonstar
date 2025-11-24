@@ -1,104 +1,150 @@
-import { useState, useCallback } from 'react';
-import { Alert } from 'react-native';
+import { useState } from 'react';
+import { Alert, Platform, PermissionsAndroid } from 'react-native';
 import { launchImageLibrary, ImageLibraryOptions, Asset } from 'react-native-image-picker';
-import { ImageAsset } from '../types';
-import { PermissionService } from '../utils/permissions';
-import { ImageService } from '../services/imageService';
+import { imageService } from '../services/imageService';
+import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 
-// Convert library Asset to our ImageAsset
-const convertAssetToImageAsset = (asset: Asset): ImageAsset => ({
-  uri: asset.uri || '',
-  type: asset.type,
-  fileName: asset.fileName,
-  fileSize: asset.fileSize,
-  width: asset.width,
-  height: asset.height,
-  base64: asset.base64,
-});
+interface ImagePickerOptions {
+  mediaType?: 'photo' | 'video' | 'mixed';
+  includeBase64?: boolean;
+  maxWidth?: number;
+  maxHeight?: number;
+  quality?: number;
+  selectionLimit?: number;
+}
+
+interface ImageResult {
+  uri: string;
+  base64?: string;
+  fileName?: string;
+  fileSize?: number;
+  type?: string;
+}
 
 export const useMultiImagePicker = () => {
-  const [selectedImages, setSelectedImages] = useState<ImageAsset[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const pickMultipleImages = useCallback(async (maxSelection: number = 5) => {
-    try {
-      setLoading(true);
+  const requestPermissions = async (): Promise<boolean> => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+        );
 
-      const hasPermission = await PermissionService.requestStoragePermission();
-      if (!hasPermission) {
-        PermissionService.showPermissionDeniedAlert('Izin galeri diperlukan untuk memilih gambar');
-        return;
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      } catch (error) {
+        console.error('Permission error:', error);
+        return false;
+      }
+    } else {
+      const photoPermission = await check(PERMISSIONS.IOS.PHOTO_LIBRARY);
+
+      if (photoPermission !== RESULTS.GRANTED) {
+        const result = await request(PERMISSIONS.IOS.PHOTO_LIBRARY);
+        return result === RESULTS.GRANTED;
       }
 
-      const libraryOptions: ImageLibraryOptions = {
-        mediaType: 'photo',
-        selectionLimit: maxSelection,
-        quality: 0.7,
-        maxWidth: 600,
-        maxHeight: 600,
-        includeBase64: false,
-      };
+      return true;
+    }
+  };
 
-      launchImageLibrary(libraryOptions, async (response) => {
-        setLoading(false);
+  const pickMultipleImages = async (options: ImagePickerOptions = {}): Promise<ImageResult[]> => {
+    setIsLoading(true);
+    try {
+      const hasPermission = await requestPermissions();
+      if (!hasPermission) {
+        Alert.alert('Error', 'Izin mengakses galeri diperlukan');
+        return [];
+      }
 
-        if (response.didCancel) {
-          return;
-        }
+      return new Promise((resolve) => {
+        const libraryOptions: ImageLibraryOptions = {
+          mediaType: 'photo' as any,
+          includeBase64: options.includeBase64 || false,
+          maxWidth: options.maxWidth || 1024,
+          maxHeight: options.maxHeight || 1024,
+          quality: options.quality as any || 0.8,
+          selectionLimit: options.selectionLimit || 10,
+        };
 
-        if (response.errorCode) {
-          Alert.alert('Error', response.errorMessage || 'Terjadi kesalahan');
-          return;
-        }
-
-        if (response.assets && response.assets.length > 0) {
-          // Convert and filter assets
-          const validAssets = response.assets
-            .map(convertAssetToImageAsset)
-            .filter(asset => asset.uri && asset.fileName);
-
-          if (validAssets.length > 0) {
-            // Simpan ke AsyncStorage sesuai soal evaluasi
-            try {
-              await ImageService.saveProductImagesToStorage(validAssets);
-              setSelectedImages(prev => {
-                const newImages = [...prev, ...validAssets];
-                return newImages.slice(0, maxSelection);
-              });
-              
-              Alert.alert(
-                'Sukses', 
-                `${validAssets.length} gambar berhasil dipilih`,
-                [{ text: 'OK' }]
-              );
-            } catch (error) {
-              Alert.alert('Error', 'Gagal menyimpan gambar ke storage');
-            }
+        launchImageLibrary(libraryOptions, (response) => {
+          if (response.didCancel) {
+            console.log('User cancelled multi image picker');
+            resolve([]);
+          } else if (response.errorCode) {
+            Alert.alert('Error', `Multi image picker error: ${response.errorMessage}`);
+            resolve([]);
+          } else if (response.assets && response.assets.length > 0) {
+            const results: ImageResult[] = response.assets.map((asset) => ({
+              uri: asset.uri!,
+              base64: asset.base64,
+              fileName: asset.fileName,
+              fileSize: asset.fileSize,
+              type: asset.type,
+            }));
+            resolve(results);
+          } else {
+            resolve([]);
           }
-        }
+        });
       });
     } catch (error) {
-      setLoading(false);
-      Alert.alert('Error', 'Gagal memilih gambar');
+      console.error('Pick multiple images error:', error);
+      Alert.alert('Error', 'Gagal memilih beberapa gambar');
+      return [];
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
+  };
 
-  const removeImage = useCallback((index: number) => {
-    setSelectedImages(prev => prev.filter((_, i) => i !== index));
-  }, []);
+  const saveMultipleImagesToStorage = async (images: ImageResult[]): Promise<string[]> => {
+    try {
+      const savedImageIds: string[] = [];
 
-  const clearImages = useCallback(() => {
-    setSelectedImages([]);
-  }, []);
+      for (const image of images) {
+        const imageToSave = {
+          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+          uri: image.uri,
+          base64: image.base64,
+          timestamp: Date.now(),
+        };
+
+        const success = await imageService.saveImage(imageToSave);
+        if (success) {
+          savedImageIds.push(imageToSave.id);
+        }
+      }
+
+      return savedImageIds;
+    } catch (error) {
+      console.error('Save multiple images error:', error);
+      return [];
+    }
+  };
+
+  const getSavedImages = async (): Promise<any[]> => {
+    try {
+      return await imageService.getImages();
+    } catch (error) {
+      console.error('Get saved images error:', error);
+      return [];
+    }
+  };
+
+  const deleteSavedImage = async (imageId: string): Promise<boolean> => {
+    try {
+      return await imageService.deleteImage(imageId);
+    } catch (error) {
+      console.error('Delete saved image error:', error);
+      return false;
+    }
+  };
 
   return {
-    selectedImages,
-    loading,
+    isLoading,
     pickMultipleImages,
-    removeImage,
-    clearImages,
-    setSelectedImages,
+    saveMultipleImagesToStorage,
+    getSavedImages,
+    deleteSavedImage,
   };
 };
-
-export default useMultiImagePicker;

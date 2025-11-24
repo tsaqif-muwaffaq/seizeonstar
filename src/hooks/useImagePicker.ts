@@ -1,218 +1,179 @@
-import { useState, useCallback } from 'react';
-import { Alert, Platform } from 'react-native';
-import { launchCamera, launchImageLibrary, CameraOptions, ImageLibraryOptions, Asset } from 'react-native-image-picker';
-import { ImageAsset, ImagePickerOptions } from '../types';
-import PermissionService from '../utils/permissions';
-import { ImageUtils } from '../utils/imageUtils';
-import { ImageService } from '../services/imageService';
+import { useState } from 'react';
+import { Alert, Platform, PermissionsAndroid } from 'react-native';
+import { launchCamera, launchImageLibrary, ImageLibraryOptions, CameraOptions, Asset } from 'react-native-image-picker';
+import { imageService } from '../services/imageService';
+import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 
-// Convert our custom types to library types
-const convertToCameraOptions = (options: ImagePickerOptions): CameraOptions => ({
-  mediaType: options.mediaType as any || 'photo',
-  quality: options.quality as any || 0.7, // Cast to any to avoid type issues
-  maxWidth: options.maxWidth,
-  maxHeight: options.maxHeight,
-  includeBase64: options.includeBase64,
-  saveToPhotos: options.saveToPhotos,
-});
+interface ImagePickerOptions {
+  mediaType?: 'photo' | 'video' | 'mixed';
+  includeBase64?: boolean;
+  maxWidth?: number;
+  maxHeight?: number;
+  quality?: number;
+}
 
-const convertToLibraryOptions = (options: ImagePickerOptions): ImageLibraryOptions => ({
-  mediaType: options.mediaType as any || 'photo',
-  quality: options.quality as any || 0.7, // Cast to any to avoid type issues
-  maxWidth: options.maxWidth,
-  maxHeight: options.maxHeight,
-  includeBase64: options.includeBase64,
-  selectionLimit: options.selectionLimit,
-});
+interface ImageResult {
+  uri: string;
+  base64?: string;
+  fileName?: string;
+  fileSize?: number;
+  type?: string;
+}
 
-// Convert library Asset to our ImageAsset
-const convertAssetToImageAsset = (asset: Asset): ImageAsset => ({
-  uri: asset.uri || '',
-  type: asset.type,
-  fileName: asset.fileName,
-  fileSize: asset.fileSize,
-  width: asset.width,
-  height: asset.height,
-  base64: asset.base64,
-});
+export const useImagePicker = () => {
+  const [isLoading, setIsLoading] = useState(false);
 
-const useImagePicker = () => {
-  const [selectedImages, setSelectedImages] = useState<ImageAsset[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const requestPermissions = async (): Promise<boolean> => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.requestMultiple([
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+          PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+        ]);
 
-  const handleImageResponse = useCallback((response: any) => {
-    if (response.didCancel) {
-      console.log('User cancelled image picker');
-      return null;
-    }
-
-    if (response.errorCode) {
-      let errorMessage = 'Terjadi kesalahan saat memilih gambar';
-      
-      switch (response.errorCode) {
-        case 'camera_unavailable':
-          errorMessage = 'Kamera tidak tersedia. Silakan gunakan galeri.';
-          Alert.alert(
-            'Kamera Tidak Tersedia',
-            errorMessage,
-            [
-              { text: 'Batal', style: 'cancel' },
-              { 
-                text: 'Buka Galeri', 
-                onPress: () => {} // Will be handled by caller
-              }
-            ]
-          );
-          break;
-        case 'permission':
-          errorMessage = 'Izin akses kamera/galeri ditolak';
-          PermissionService.showPermissionDeniedAlert('Aplikasi membutuhkan izin untuk mengakses kamera dan galeri');
-          break;
-        default:
-          errorMessage = response.errorMessage || 'Terjadi kesalahan tidak diketahui';
+        return (
+          granted['android.permission.CAMERA'] === PermissionsAndroid.RESULTS.GRANTED &&
+          granted['android.permission.READ_EXTERNAL_STORAGE'] === PermissionsAndroid.RESULTS.GRANTED
+        );
+      } catch (error) {
+        console.error('Permission error:', error);
+        return false;
       }
-      
-      setError(errorMessage);
-      return null;
-    }
+    } else {
+      const cameraPermission = await check(PERMISSIONS.IOS.CAMERA);
+      const photoPermission = await check(PERMISSIONS.IOS.PHOTO_LIBRARY);
 
-    if (response.assets && response.assets.length > 0) {
-      const validAssets = response.assets
-        .map(convertAssetToImageAsset)
-        .filter(asset => ImageUtils.validateImageSize(asset, 10));
-
-      if (validAssets.length !== response.assets.length) {
-        Alert.alert('Peringatan', 'Beberapa gambar terlalu besar dan tidak dipilih');
+      if (cameraPermission !== RESULTS.GRANTED) {
+        await request(PERMISSIONS.IOS.CAMERA);
+      }
+      if (photoPermission !== RESULTS.GRANTED) {
+        await request(PERMISSIONS.IOS.PHOTO_LIBRARY);
       }
 
-      return validAssets;
+      return true;
     }
+  };
 
-    return null;
-  }, []);
-
-  const openCamera = useCallback(async (options: ImagePickerOptions = {}) => {
+  const takePhoto = async (options: ImagePickerOptions = {}): Promise<ImageResult | null> => {
+    setIsLoading(true);
     try {
-      setError(null);
-      
-      const hasPermission = await PermissionService.requestCameraPermission();
+      const hasPermission = await requestPermissions();
       if (!hasPermission) {
-        PermissionService.showPermissionDeniedAlert('Izin kamera diperlukan untuk mengambil foto');
-        return;
+        Alert.alert('Error', 'Izin kamera dan penyimpanan diperlukan');
+        return null;
       }
 
-      const cameraOptions = convertToCameraOptions(options);
-
-      launchCamera(cameraOptions, (response) => {
-        const assets = handleImageResponse(response);
-        if (assets) {
-          setSelectedImages(prev => [...prev, ...assets]);
-        }
-      });
-    } catch (err) {
-      setError('Gagal membuka kamera');
-      console.error('Camera error:', err);
-    }
-  }, [handleImageResponse]);
-
-  const openImageLibrary = useCallback(async (options: ImagePickerOptions = {}) => {
-    try {
-      setError(null);
-      
-      const hasPermission = await PermissionService.requestStoragePermission();
-      if (!hasPermission) {
-        PermissionService.showPermissionDeniedAlert('Izin galeri diperlukan untuk memilih gambar');
-        return;
-      }
-
-      const libraryOptions = convertToLibraryOptions(options);
-
-      launchImageLibrary(libraryOptions, (response) => {
-        const assets = handleImageResponse(response);
-        if (assets) {
-          if (options.selectionLimit === 1) {
-            setSelectedImages(assets);
-          } else {
-            setSelectedImages(prev => [...prev, ...assets]);
-          }
-        }
-      });
-    } catch (err) {
-      setError('Gagal membuka galeri');
-      console.error('Image library error:', err);
-    }
-  }, [handleImageResponse]);
-
-  const openCameraWithSave = useCallback(async (options: ImagePickerOptions = {}) => {
-    try {
-      if (Platform.OS === 'android') {
-        const hasStoragePermission = await PermissionService.requestStoragePermissionAndSave();
-        
-        const cameraOptions: ImagePickerOptions = {
-          ...options,
-          saveToPhotos: hasStoragePermission,
+      return new Promise((resolve) => {
+        const cameraOptions: CameraOptions = {
+          mediaType: 'photo' as any,
+          includeBase64: options.includeBase64 || false,
+          maxWidth: options.maxWidth || 1024,
+          maxHeight: options.maxHeight || 1024,
+          quality: options.quality as any || 0.8,
+          saveToPhotos: true,
         };
 
-        if (!hasStoragePermission) {
-          Alert.alert(
-            'Peringatan',
-            'Foto tidak akan disimpan ke galeri publik karena izin penyimpanan ditolak',
-            [{ text: 'OK' }]
-          );
-        }
-
-        await openCamera(cameraOptions);
-      } else {
-        await openCamera({ ...options, saveToPhotos: true });
-      }
-    } catch (err) {
-      setError('Gagal membuka kamera dengan penyimpanan');
-      console.error('Camera with save error:', err);
-    }
-  }, [openCamera]);
-
-  const uploadImages = useCallback(async (endpoint: string): Promise<any> => {
-    if (selectedImages.length === 0) {
-      throw new Error('Tidak ada gambar yang dipilih');
-    }
-
-    setUploading(true);
-    setError(null);
-
-    try {
-      const result = await ImageService.uploadImages(selectedImages, endpoint);
-      return result;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Upload gagal';
-      setError(errorMessage);
-      throw err;
+        launchCamera(cameraOptions, (response) => {
+          if (response.didCancel) {
+            console.log('User cancelled camera');
+            resolve(null);
+          } else if (response.errorCode) {
+            Alert.alert('Error', `Camera error: ${response.errorMessage}`);
+            resolve(null);
+          } else if (response.assets && response.assets.length > 0) {
+            const asset = response.assets[0];
+            const result: ImageResult = {
+              uri: asset.uri!,
+              base64: asset.base64,
+              fileName: asset.fileName,
+              fileSize: asset.fileSize,
+              type: asset.type,
+            };
+            resolve(result);
+          } else {
+            resolve(null);
+          }
+        });
+      });
+    } catch (error) {
+      console.error('Take photo error:', error);
+      Alert.alert('Error', 'Gagal mengambil foto');
+      return null;
     } finally {
-      setUploading(false);
+      setIsLoading(false);
     }
-  }, [selectedImages]);
+  };
 
-  const clearImages = useCallback(() => {
-    setSelectedImages([]);
-    setError(null);
-  }, []);
+  const pickImage = async (options: ImagePickerOptions = {}): Promise<ImageResult | null> => {
+    setIsLoading(true);
+    try {
+      const hasPermission = await requestPermissions();
+      if (!hasPermission) {
+        Alert.alert('Error', 'Izin mengakses galeri diperlukan');
+        return null;
+      }
 
-  const removeImage = useCallback((index: number) => {
-    setSelectedImages(prev => prev.filter((_, i) => i !== index));
-  }, []);
+      return new Promise((resolve) => {
+        const libraryOptions: ImageLibraryOptions = {
+          mediaType: 'photo' as any,
+          includeBase64: options.includeBase64 || false,
+          maxWidth: options.maxWidth || 1024,
+          maxHeight: options.maxHeight || 1024,
+          quality: options.quality as any || 0.8,
+        };
+
+        launchImageLibrary(libraryOptions, (response) => {
+          if (response.didCancel) {
+            console.log('User cancelled image picker');
+            resolve(null);
+          } else if (response.errorCode) {
+            Alert.alert('Error', `Image picker error: ${response.errorMessage}`);
+            resolve(null);
+          } else if (response.assets && response.assets.length > 0) {
+            const asset = response.assets[0];
+            const result: ImageResult = {
+              uri: asset.uri!,
+              base64: asset.base64,
+              fileName: asset.fileName,
+              fileSize: asset.fileSize,
+              type: asset.type,
+            };
+            resolve(result);
+          } else {
+            resolve(null);
+          }
+        });
+      });
+    } catch (error) {
+      console.error('Pick image error:', error);
+      Alert.alert('Error', 'Gagal memilih gambar');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const saveImageToStorage = async (imageData: ImageResult): Promise<string | null> => {
+    try {
+      const imageToSave = {
+        id: Date.now().toString(),
+        uri: imageData.uri,
+        base64: imageData.base64,
+        timestamp: Date.now(),
+      };
+
+      const success = await imageService.saveImage(imageToSave);
+      return success ? imageToSave.id : null;
+    } catch (error) {
+      console.error('Save image error:', error);
+      return null;
+    }
+  };
 
   return {
-    selectedImages,
-    uploading,
-    error,
-    openCamera,
-    openImageLibrary,
-    openCameraWithSave,
-    uploadImages,
-    clearImages,
-    removeImage,
-    setSelectedImages,
+    isLoading,
+    takePhoto,
+    pickImage,
+    saveImageToStorage,
   };
 };
-
-export default useImagePicker;

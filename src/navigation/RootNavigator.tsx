@@ -10,14 +10,14 @@ import DeepLinkService from '../services/deepLinkService';
 
 // Screens
 import SplashScreen from '../screens/SplashScreen';
-import LoginScreen from '../screens/LoginScreen';
-import HomeScreen from '../screens/HomeScreen';
+import { LoginScreen } from '../screens/LoginScreen';
+import { HomeScreen } from '../screens/HomeScreen';
 import ProductScreen from '../screens/ProductScreen';
 import CartScreen from '../screens/CartScreen';
 import CheckoutScreen from '../screens/CheckoutScreen';
-import ProfileScreen from '../screens/ProfileScreen';
-import ProductUploadScreen from '../screens/ProductUploadScreen';
-import ProfileImageScreen from '../screens/ProfileImageScreen';
+import { ProfileScreen } from '../screens/ProfileScreen';
+import { ProductUploadScreen } from '../screens/ProductUploadScreen';
+import { ProfileImageScreen }from '../screens/ProfileImageScreen';
 import ProductListScreen from '../screens/ProductListScreen';
 
 const Stack = createNativeStackNavigator();

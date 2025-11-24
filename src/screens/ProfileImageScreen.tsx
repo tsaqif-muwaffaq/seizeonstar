@@ -1,279 +1,338 @@
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
-  Image,
-  Alert,
   ScrollView,
+  Alert,
+  Image
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import  ImagePickerModal  from '../components/ImagePickerModal';
-import LoadingIndicator from '../components/LoadingIndicator';
-import PermissionHandler from '../components/PermissionHandler';
-import  useImagePicker  from '../hooks/useImagePicker';
-import { ImageService } from '../services/imageService';
-import { ImageAsset } from '../types';
+import { useImagePicker } from '../hooks/useImagePicker';
+import { imageService } from '../services/imageService';
 
-const ProfileImageScreen: React.FC = () => {
-  const navigation = useNavigation();
-  const [showImagePicker, setShowImagePicker] = useState(false);
-  const [base64Preview, setBase64Preview] = useState<string | null>(null);
-  
-  const {
-    selectedImages,
-    uploading,
-    openCameraWithSave,
-    uploadImages,
-    clearImages,
-  } = useImagePicker();
+export const ProfileImageScreen: React.FC = () => {
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [savedImageId, setSavedImageId] = useState<string | null>(null);
+  const [savedImages, setSavedImages] = useState<any[]>([]);
 
-  // Load base64 preview dari storage saat component mount
-  React.useEffect(() => {
-    loadBase64Preview();
+  const { takePhoto, pickImage, saveImageToStorage, isLoading } = useImagePicker();
+
+  useEffect(() => {
+    loadSavedImages();
   }, []);
 
-  const loadBase64Preview = async () => {
+  const loadSavedImages = async () => {
     try {
-      const preview = await ImageService.getBase64Preview('@ecom:profilePreview');
-      setBase64Preview(preview);
-    } catch (error) {
-      console.error('Error loading base64 preview:', error);
-    }
-  };
-
-  const handleImagesSelected = async (assets: ImageAsset[]) => {
-    if (assets.length > 0) {
-      const asset = assets[0];
+      const images = await imageService.getImages();
+      setSavedImages(images);
       
-      // Simpan base64 preview untuk offline access
-      if (asset.base64) {
-        await ImageService.saveBase64Preview(asset, '@ecom:profilePreview');
-        setBase64Preview(asset.base64);
+      // Set the first image as profile image if available
+      if (images.length > 0) {
+        setProfileImage(images[0].uri);
+        setSavedImageId(images[0].id);
       }
-
-      // Upload ke server
-      try {
-        await uploadImages('https://api.example.com/upload-avatar');
-        Alert.alert('Sukses', 'Foto profil berhasil diupload');
-      } catch (error) {
-        Alert.alert('Error', 'Gagal mengupload foto profil');
-      }
-    }
-  };
-
-  const handleKTPUpload = async () => {
-    try {
-      await openCameraWithSave({
-        mediaType: 'photo',
-        quality: 0.7,
-        maxWidth: 1024,
-        maxHeight: 1024,
-      });
     } catch (error) {
-      Alert.alert('Error', 'Gagal mengambil foto KTP');
+      console.error('Error loading saved images:', error);
     }
   };
 
-  const handleBase64Explanation = () => {
+  const handleTakePhoto = async () => {
+    const result = await takePhoto({
+      mediaType: 'photo',
+      includeBase64: true,
+      quality: 0.8,
+    });
+
+    if (result) {
+      setProfileImage(result.uri);
+      const imageId = await saveImageToStorage(result);
+      setSavedImageId(imageId);
+      await loadSavedImages(); // Reload saved images
+    }
+  };
+
+  const handlePickImage = async () => {
+    const result = await pickImage({
+      mediaType: 'photo',
+      includeBase64: true,
+      quality: 0.8,
+    });
+
+    if (result) {
+      setProfileImage(result.uri);
+      const imageId = await saveImageToStorage(result);
+      setSavedImageId(imageId);
+      await loadSavedImages(); // Reload saved images
+    }
+  };
+
+  const handleSelectSavedImage = (image: any) => {
+    setProfileImage(image.uri);
+    setSavedImageId(image.id);
+  };
+
+  const handleDeleteImage = async (imageId: string) => {
     Alert.alert(
-      'Mengapa Base64 disimpan di AsyncStorage?',
-      'Base64 preview gambar disimpan di AsyncStorage karena:\n\n• Data tidak sensitif (hanya preview)\n• Ukuran kecil (300x300px)\n• Untuk akses cepat saat offline\n• Token sensitif disimpan di Keychain karena membutuhkan keamanan tinggi',
-      [{ text: 'Mengerti' }]
+      'Hapus Gambar',
+      'Apakah Anda yakin ingin menghapus gambar ini?',
+      [
+        { text: 'Batal', style: 'cancel' },
+        {
+          text: 'Hapus',
+          style: 'destructive',
+          onPress: async () => {
+            const success = await imageService.deleteImage(imageId);
+            if (success) {
+              if (savedImageId === imageId) {
+                setProfileImage(null);
+                setSavedImageId(null);
+              }
+              await loadSavedImages();
+              Alert.alert('Sukses', 'Gambar berhasil dihapus');
+            } else {
+              Alert.alert('Error', 'Gagal menghapus gambar');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleClearAllImages = async () => {
+    Alert.alert(
+      'Hapus Semua Gambar',
+      'Apakah Anda yakin ingin menghapus semua gambar?',
+      [
+        { text: 'Batal', style: 'cancel' },
+        {
+          text: 'Hapus Semua',
+          style: 'destructive',
+          onPress: async () => {
+            const success = await imageService.clearAllImages();
+            if (success) {
+              setProfileImage(null);
+              setSavedImageId(null);
+              setSavedImages([]);
+              Alert.alert('Sukses', 'Semua gambar berhasil dihapus');
+            } else {
+              Alert.alert('Error', 'Gagal menghapus semua gambar');
+            }
+          },
+        },
+      ]
     );
   };
 
   return (
-    <PermissionHandler
-      permissionType="both"
-      onPermissionGranted={() => console.log('Permission granted')}
-      onPermissionDenied={() => console.log('Permission denied')}
-    >
-      <ScrollView style={styles.container}>
+    <ScrollView style={styles.container}>
+      <View style={styles.content}>
         <Text style={styles.title}>Foto Profil</Text>
 
-        {/* Avatar Upload Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Foto Profil</Text>
-          
-          <View style={styles.avatarContainer}>
-            {base64Preview ? (
-              <Image 
-                source={{ uri: `data:image/jpeg;base64,${base64Preview}` }} 
-                style={styles.avatarImage}
-              />
-            ) : selectedImages.length > 0 ? (
-              <Image 
-                source={{ uri: selectedImages[0].uri }} 
-                style={styles.avatarImage}
-              />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarPlaceholderText}>Foto Profil</Text>
-              </View>
-            )}
-          </View>
-
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => setShowImagePicker(true)}
-          >
-            <Text style={styles.buttonText}>
-              {selectedImages.length > 0 ? 'Ganti Foto Profil' : 'Pilih Foto Profil'}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.button, styles.outlineButton]}
-            onPress={handleBase64Explanation}
-          >
-            <Text style={styles.outlineButtonText}>Info Penyimpanan Base64</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* KTP Upload Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Verifikasi KTP</Text>
-          <Text style={styles.sectionDescription}>
-            Foto KTP akan disimpan ke galeri sebagai backup
-          </Text>
-
-          <TouchableOpacity
-            style={[styles.button, styles.ktpButton]}
-            onPress={handleKTPUpload}
-            disabled={uploading}
-          >
-            <Text style={styles.buttonText}>
-              {uploading ? 'Mengambil Foto...' : 'Ambil Foto KTP'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Quick Preview dengan Base64 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Preview Cepat (Offline)</Text>
-          <Text style={styles.sectionDescription}>
-            Preview ini akan tampil bahkan saat offline
-          </Text>
-
-          {base64Preview && (
-            <View style={styles.previewContainer}>
-              <Image 
-                source={{ uri: `data:image/jpeg;base64,${base64Preview}` }} 
-                style={styles.previewImage}
-              />
-              <Text style={styles.previewText}>Preview tersimpan offline</Text>
+        {/* Current Profile Image */}
+        <View style={styles.currentImageSection}>
+          <Text style={styles.sectionTitle}>Foto Profil Saat Ini</Text>
+          {profileImage ? (
+            <View style={styles.currentImageContainer}>
+              <Image source={{ uri: profileImage }} style={styles.currentImage} />
+              <Text style={styles.imageInfo}>
+                {savedImageId ? 'Tersimpan di storage' : 'Belum disimpan'}
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.noImageContainer}>
+              <Text style={styles.noImageText}>Belum ada foto profil</Text>
             </View>
           )}
         </View>
 
-        <ImagePickerModal
-          visible={showImagePicker}
-          onClose={() => setShowImagePicker(false)}
-          onImagesSelected={handleImagesSelected}
-          selectionLimit={1}
-          includeBase64={true}
-          maxWidth={300}
-          maxHeight={300}
-        />
+        {/* Action Buttons */}
+        <View style={styles.actionButtons}>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={handleTakePhoto}
+            disabled={isLoading}
+          >
+            <Text style={styles.actionButtonText}>
+              {isLoading ? 'Loading...' : 'Ambil Foto Baru'}
+            </Text>
+          </TouchableOpacity>
 
-        <LoadingIndicator visible={uploading} text="Mengupload gambar..." />
-      </ScrollView>
-    </PermissionHandler>
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.pickButton]}
+            onPress={handlePickImage}
+            disabled={isLoading}
+          >
+            <Text style={styles.actionButtonText}>
+              {isLoading ? 'Loading...' : 'Pilih dari Galeri'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Saved Images */}
+        {savedImages.length > 0 && (
+          <View style={styles.savedImagesSection}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Gambar Tersimpan</Text>
+              <TouchableOpacity onPress={handleClearAllImages}>
+                <Text style={styles.clearAllText}>Hapus Semua</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.savedImagesContainer}>
+              {savedImages.map((image) => (
+                <View key={image.id} style={styles.savedImageItem}>
+                  <TouchableOpacity onPress={() => handleSelectSavedImage(image)}>
+                    <Image source={{ uri: image.uri }} style={styles.savedImage} />
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.deleteImageButton}
+                    onPress={() => handleDeleteImage(image.id)}
+                  >
+                    <Text style={styles.deleteImageText}>×</Text>
+                  </TouchableOpacity>
+                  {savedImageId === image.id && (
+                    <View style={styles.selectedIndicator}>
+                      <Text style={styles.selectedText}>Dipilih</Text>
+                    </View>
+                  )}
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+      </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: 'white',
+    backgroundColor: '#FFFFFF',
+  },
+  content: {
+    padding: 20,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 30,
+    color: '#1C1C1E',
     textAlign: 'center',
   },
-  section: {
+  currentImageSection: {
     marginBottom: 30,
-    padding: 16,
-    backgroundColor: '#F8F9FA',
-    borderRadius: 12,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  sectionDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 16,
-  },
-  avatarContainer: {
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  avatarImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-  },
-  avatarPlaceholder: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#E9ECEF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarPlaceholderText: {
-    color: '#6C757D',
-    fontSize: 14,
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  buttonText: {
-    color: 'white',
     fontSize: 16,
     fontWeight: '600',
+    marginBottom: 12,
+    color: '#1C1C1E',
   },
-  outlineButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#007AFF',
+  currentImageContainer: {
+    alignItems: 'center',
   },
-  outlineButtonText: {
-    color: '#007AFF',
+  currentImage: {
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    marginBottom: 10,
+  },
+  imageInfo: {
+    fontSize: 14,
+    color: '#666666',
+    fontStyle: 'italic',
+  },
+  noImageContainer: {
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 8,
+  },
+  noImageText: {
+    fontSize: 16,
+    color: '#666666',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 30,
+  },
+  actionButton: {
+    flex: 1,
+    backgroundColor: '#007AFF',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginHorizontal: 5,
+  },
+  pickButton: {
+    backgroundColor: '#34C759',
+  },
+  actionButtonText: {
+    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
   },
-  ktpButton: {
-    backgroundColor: '#34C759',
+  savedImagesSection: {
+    marginBottom: 20,
   },
-  previewContainer: {
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 8,
+    marginBottom: 12,
   },
-  previewImage: {
-    width: 100,
-    height: 100,
+  clearAllText: {
+    color: '#FF3B30',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  savedImagesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  savedImageItem: {
+    width: '48%',
+    marginBottom: 15,
+    position: 'relative',
+  },
+  savedImage: {
+    width: '100%',
+    height: 120,
     borderRadius: 8,
-    marginBottom: 8,
   },
-  previewText: {
-    fontSize: 12,
-    color: '#666',
-    fontStyle: 'italic',
+  deleteImageButton: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: '#FF3B30',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteImageText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  selectedIndicator: {
+    position: 'absolute',
+    bottom: 5,
+    left: 5,
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  selectedText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '600',
   },
 });
-
-export default ProfileImageScreen;

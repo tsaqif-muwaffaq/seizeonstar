@@ -1,67 +1,61 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { storageService } from '../services/storageService';
 
-export const useStorage = <T>(key: string, initialValue: T) => {
-  const [data, setData] = useState<T>(initialValue);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export const useStorage = () => {
+  const [isLoading, setIsLoading] = useState(false);
 
-  const loadData = useCallback(async () => {
+  // Method untuk data sederhana (bukan credentials)
+  const setItem = useCallback(async (key: string, value: string): Promise<boolean> => {
+    setIsLoading(true);
     try {
-      setLoading(true);
-      setError(null);
-      const stored = await storageService.getItem(key);
-      
-      if (stored !== null) {
-        const parsedData = JSON.parse(stored) as T;
-        setData(parsedData);
-      }
-    } catch (err) {
-      setError('Gagal memuat data dari storage');
-      console.error('Error loading data:', err);
+      // Simpan sebagai generic password dengan key sebagai username
+      const result = await storageService.saveCredentials(key, value);
+      return result;
+    } catch (error) {
+      console.error('Error setting item:', error);
+      return false;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  }, [key]);
+  }, []);
 
-  const saveData = useCallback(async (newData: T): Promise<boolean> => {
+  const getItem = useCallback(async (key: string): Promise<string | null> => {
+    setIsLoading(true);
     try {
-      setError(null);
-      await storageService.setItem(key, JSON.stringify(newData));
-      setData(newData);
-      return true;
-    } catch (err) {
-      setError('Gagal menyimpan data ke storage');
-      console.error('Error saving data:', err);
-      return false;
+      const credentials = await storageService.getCredentials();
+      if (credentials && credentials.username === key) {
+        return credentials.password;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting item:', error);
+      return null;
+    } finally {
+      setIsLoading(false);
     }
-  }, [key]);
+  }, []);
 
-  const removeData = useCallback(async (): Promise<boolean> => {
+  const removeItem = useCallback(async (key: string): Promise<boolean> => {
+    setIsLoading(true);
     try {
-      setError(null);
-      await storageService.removeItem(key);
-      setData(initialValue);
+      // Hanya hapus jika key cocok dengan stored credentials
+      const credentials = await storageService.getCredentials();
+      if (credentials && credentials.username === key) {
+        return await storageService.clearCredentials();
+      }
       return true;
-    } catch (err) {
-      setError('Gagal menghapus data dari storage');
-      console.error('Error removing data:', err);
+    } catch (error) {
+      console.error('Error removing item:', error);
       return false;
+    } finally {
+      setIsLoading(false);
     }
-  }, [key, initialValue]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  }, []);
 
   return {
-    data,
-    loading,
-    error,
-    saveData,
-    removeData,
-    refresh: loadData,
+    isLoading,
+    setItem,
+    getItem,
+    removeItem
   };
 };
-
-export default useStorage;

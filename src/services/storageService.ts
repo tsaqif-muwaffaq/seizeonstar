@@ -1,77 +1,53 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Keychain from 'react-native-keychain';
+
+export interface Credentials {
+  username: string;
+  password: string;
+}
 
 class StorageService {
-  async setItem(key: string, value: string): Promise<void> {
+  async saveCredentials(username: string, password: string): Promise<boolean> {
     try {
-      await AsyncStorage.setItem(key, value);
+      await Keychain.setGenericPassword(username, password, {
+        accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED_THIS_DEVICE_ONLY
+      });
+      return true;
     } catch (error) {
-      console.error('Error saving to storage:', error);
-      throw error;
+      console.error('Error saving credentials:', error);
+      return false;
     }
   }
 
-  async getItem(key: string): Promise<string | null> {
+  async getCredentials(): Promise<Credentials | null> {
     try {
-      return await AsyncStorage.getItem(key);
+      const credentials = await Keychain.getGenericPassword();
+      if (credentials) {
+        return {
+          username: credentials.username,
+          password: credentials.password
+        };
+      }
+      return null;
     } catch (error) {
-      console.error('Error reading from storage:', error);
+      console.error('Error getting credentials:', error);
       return null;
     }
   }
 
-  async removeItem(key: string): Promise<void> {
+  async clearCredentials(): Promise<boolean> {
     try {
-      await AsyncStorage.removeItem(key);
+      await Keychain.resetGenericPassword();
+      return true;
     } catch (error) {
-      console.error('Error removing from storage:', error);
-      throw error;
+      console.error('Error clearing credentials:', error);
+      return false;
     }
   }
 
-  async multiSet(keyValuePairs: [string, string][]): Promise<void> {
-    try {
-      await AsyncStorage.multiSet(keyValuePairs);
-    } catch (error) {
-      console.error('Error multi-setting to storage:', error);
-      throw error;
-    }
-  }
-
-  async multiGet(keys: string[]): Promise<readonly [string, string | null][]> {
-    try {
-      return await AsyncStorage.multiGet(keys);
-    } catch (error) {
-      console.error('Error multi-getting from storage:', error);
-      return [];
-    }
-  }
-
-  async clear(): Promise<void> {
-    try {
-      await AsyncStorage.clear();
-    } catch (error) {
-      console.error('Error clearing storage:', error);
-      throw error;
-    }
-  }
-
-  // Wishlist specific methods
-  async loadWishlist(): Promise<string | null> {
-    return this.getItem('@ecom:wishlist');
-  }
-
-  async saveWishlist(wishlistData: string): Promise<void> {
-    await this.setItem('@ecom:wishlist', wishlistData);
-  }
-
-  async loadWishlistMeta(): Promise<string | null> {
-    return this.getItem('@ecom:wishlist_meta');
-  }
-
-  async saveWishlistMeta(metaData: string): Promise<void> {
-    await this.setItem('@ecom:wishlist_meta', metaData);
+  async hasStoredCredentials(): Promise<boolean> {
+    const credentials = await this.getCredentials();
+    return !!credentials;
   }
 }
 
 export const storageService = new StorageService();
-export default storageService;

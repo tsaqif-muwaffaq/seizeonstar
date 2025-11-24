@@ -1,63 +1,62 @@
-import { useState, useEffect, useCallback } from 'react';
-import { apiClient } from '../api/apiClient';
-import { useNetworkAwareFetch } from './useNetInfo';
+import { useState, useCallback } from 'react';
+import { Alert } from 'react-native';
+import { useAuth } from './useAuth';
 
-interface UseApiOptions {
-  immediate?: boolean;
-  timeout?: number;
+interface ApiOptions {
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  headers?: Record<string, string>;
+  body?: any;
 }
 
-export const useApi = <T>(url: string, options: UseApiOptions = {}) => {
-  const { immediate = true, timeout = 7000 } = options;
-  const { canMakeRequests } = useNetworkAwareFetch();
-  
-  const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(false);
+export const useApi = () => {
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
-  const execute = useCallback(async (customUrl?: string) => {
-    if (!canMakeRequests) {
-      setError('No internet connection');
-      return null;
-    }
-
-    setLoading(true);
+  const apiCall = useCallback(async (url: string, options: ApiOptions = {}) => {
+    setIsLoading(true);
     setError(null);
 
-    let timeoutId: NodeJS.Timeout | null = null;
-
     try {
-      const controller = new AbortController();
-      timeoutId = setTimeout(() => controller.abort(), timeout);
+      const config: RequestInit = {
+        method: options.method || 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(user?.token && { Authorization: `Bearer ${user.token}` }),
+          ...options.headers,
+        },
+      };
 
-      const response = await apiClient.get(customUrl || url, {
-        signal: controller.signal,
-      });
-
-      if (timeoutId) clearTimeout(timeoutId);
-      setData(response.data);
-      return response.data;
-    } catch (err: any) {
-      if (timeoutId) clearTimeout(timeoutId);
-      
-      if (err.name === 'AbortError') {
-        setError('Request timeout');
-      } else if (err.response) {
-        setError(`Server error: ${err.response.status}`);
-      } else {
-        setError(err.message || 'Network error');
+      if (options.body && (options.method === 'POST' || options.method === 'PUT')) {
+        config.body = JSON.stringify(options.body);
       }
-      return null;
+
+      const response = await fetch(url, config);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan';
+      setError(errorMessage);
+      Alert.alert('Error', errorMessage);
+      throw err;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  }, [url, canMakeRequests, timeout]);
+  }, [user?.token]);
 
-  useEffect(() => {
-    if (immediate) {
-      execute();
-    }
-  }, [execute, immediate]);
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
 
-  return { data, loading, error, execute, refetch: execute };
+  return {
+    isLoading,
+    error,
+    apiCall,
+    clearError,
+  };
 };

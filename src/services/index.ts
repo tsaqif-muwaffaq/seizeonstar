@@ -1,4 +1,5 @@
-export { default as storageService } from './storageService';
-export { default as ImageService } from './imageService';
-export { default as CameraService } from './CameraService';
-export { default as DeepLinkService } from './deepLinkService';
+// Export semua services
+export { authService } from './authService';
+export { biometricService } from './biometricService';
+export { storageService } from './storageService';
+export { imageService } from './imageService';

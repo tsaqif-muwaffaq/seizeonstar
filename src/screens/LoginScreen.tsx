@@ -1,145 +1,211 @@
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  ScrollView,
   Alert,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import useAuth from '../hooks/useAuth';
+import { useAuth } from '../hooks/useAuth';
+import { useBiometric } from '../hooks/useBiometric';
+import { BiometricButton } from '../components/BiometricAuth/BiometricButton';
+import { BiometricSetup } from '../components/BiometricAuth/BiometricSetup';
 
-const LoginScreen: React.FC = () => {
-  const navigation = useNavigation();
-  const { login } = useAuth();
-  const [email, setEmail] = useState('');
+export const LoginScreen: React.FC = () => {
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const { loginManual, loginWithBiometric, isLoading, hasStoredCredentials } = useAuth();
+  const { biometricInfo, isAvailable } = useBiometric();
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Harap isi email dan password');
+  useEffect(() => {
+    // Auto try biometric login jika tersedia dan ada stored credentials
+    if (hasStoredCredentials && isAvailable && !isLoading) {
+      handleBiometricLogin();
+    }
+  }, [hasStoredCredentials, isAvailable, isLoading]);
+
+  const handleManualLogin = async () => {
+    if (!username || !password) {
+      Alert.alert('Error', 'Harap isi username dan password');
       return;
     }
 
-    setLoading(true);
-    try {
-      await login(email, password);
-      // Navigation will be handled by auth state change
-    } catch (error) {
-      Alert.alert('Error', 'Login gagal. Periksa email dan password Anda.');
-    } finally {
-      setLoading(false);
+    const result = await loginManual(username, password);
+    
+    if (result.success) {
+      Alert.alert('Sukses', 'Login berhasil!');
+    } else {
+      Alert.alert('Gagal Login', result.error || 'Terjadi kesalahan');
+    }
+  };
+
+  const handleBiometricLogin = async () => {
+    const result = await loginWithBiometric();
+    
+    if (!result.success) {
+      if (result.error?.includes('Tidak ada data login tersimpan')) {
+        return;
+      }
+      Alert.alert('Gagal Login', result.error || 'Autentikasi biometric gagal');
+    }
+  };
+
+  const getBiometricButtonText = () => {
+    if (biometricInfo.biometryType === 'FaceID') {
+      return 'Login dengan Face ID';
+    } else {
+      return 'Login dengan Sidik Jari';
     }
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Login</Text>
-      <Text style={styles.subtitle}>Masuk ke akun Anda</Text>
+    <KeyboardAvoidingView 
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.content}>
+          <Text style={styles.title}>Selamat Datang</Text>
+          <Text style={styles.subtitle}>Silakan login untuk melanjutkan</Text>
 
-      <View style={styles.form}>
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
-        
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
+          <TextInput
+            style={styles.input}
+            placeholder="Username"
+            value={username}
+            onChangeText={setUsername}
+            autoCapitalize="none"
+            placeholderTextColor="#999"
+          />
 
-        <TouchableOpacity
-          style={[styles.loginButton, loading && styles.loginButtonDisabled]}
-          onPress={handleLogin}
-          disabled={loading}
-        >
-          <Text style={styles.loginButtonText}>
-            {loading ? 'Memproses...' : 'Login'}
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            placeholderTextColor="#999"
+          />
+
+          <TouchableOpacity
+            style={[styles.loginButton, isLoading && styles.buttonDisabled]}
+            onPress={handleManualLogin}
+            disabled={isLoading}
+          >
+            <Text style={styles.loginButtonText}>
+              {isLoading ? 'Loading...' : 'Login Manual'}
+            </Text>
+          </TouchableOpacity>
+
+          <Text style={styles.demoText}>
+            Demo: username: user, password: 1234
           </Text>
-        </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={styles.demoButton}
-          onPress={() => {
-            setEmail('demo@example.com');
-            setPassword('password');
-          }}
-        >
-          <Text style={styles.demoButtonText}>Isi Data Demo</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+          {/* Biometric Login Button */}
+          {isAvailable && hasStoredCredentials && (
+            <BiometricButton
+              onPress={handleBiometricLogin}
+              title={getBiometricButtonText()}
+              disabled={isLoading}
+              context="untuk Login"
+            />
+          )}
+
+          {/* Biometric Setup Prompt */}
+          {!isAvailable && (
+            <BiometricSetup />
+          )}
+
+          {/* Fallback untuk device tanpa biometric */}
+          {!isAvailable && hasStoredCredentials && (
+            <TouchableOpacity
+              style={styles.fallbackButton}
+              onPress={handleManualLogin}
+              disabled={isLoading}
+            >
+              <Text style={styles.fallbackButtonText}>
+                Login dengan Password
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white',
-    padding: 16,
+    backgroundColor: '#FFFFFF',
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  content: {
+    flex: 1,
+    padding: 20,
+    justifyContent: 'center',
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginTop: 40,
     marginBottom: 8,
+    color: '#1C1C1E',
   },
   subtitle: {
     fontSize: 16,
     textAlign: 'center',
     marginBottom: 40,
-    color: '#666',
-  },
-  form: {
-    marginTop: 20,
+    color: '#666666',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#DDD',
+    borderColor: '#DDDDDD',
     borderRadius: 8,
-    padding: 16,
+    padding: 15,
     marginBottom: 16,
     fontSize: 16,
+    backgroundColor: '#F8F9FA',
   },
   loginButton: {
     backgroundColor: '#007AFF',
-    padding: 16,
+    padding: 15,
     borderRadius: 8,
     alignItems: 'center',
     marginBottom: 16,
   },
-  loginButtonDisabled: {
+  buttonDisabled: {
     backgroundColor: '#CCCCCC',
   },
   loginButtonText: {
-    color: 'white',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },
-  demoButton: {
-    padding: 16,
+  demoText: {
+    textAlign: 'center',
+    color: '#666666',
+    fontSize: 14,
+    marginBottom: 20,
+    fontStyle: 'italic',
+  },
+  fallbackButton: {
+    padding: 15,
+    borderRadius: 8,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#007AFF',
-    borderRadius: 8,
+    marginVertical: 10,
   },
-  demoButtonText: {
+  fallbackButtonText: {
     color: '#007AFF',
     fontSize: 16,
     fontWeight: '600',
   },
 });
-
-export default LoginScreen;

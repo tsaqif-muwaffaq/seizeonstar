@@ -1,118 +1,80 @@
 import { useState, useCallback } from 'react';
-import { Alert } from 'react-native';
-import PermissionService from '../utils/permissions';
+import { Platform, Alert } from 'react-native';
+import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+
+type PermissionType = 'camera' | 'photo' | 'biometric';
 
 export const usePermissions = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const requestCameraPermission = useCallback(async (): Promise<boolean> => {
+  const getPermission = useCallback((type: PermissionType) => {
+    if (Platform.OS === 'ios') {
+      switch (type) {
+        case 'camera':
+          return PERMISSIONS.IOS.CAMERA;
+        case 'photo':
+          return PERMISSIONS.IOS.PHOTO_LIBRARY;
+        case 'biometric':
+          return null; // Biometric handled separately
+        default:
+          return null;
+      }
+    } else {
+      switch (type) {
+        case 'camera':
+          return PERMISSIONS.ANDROID.CAMERA;
+        case 'photo':
+          return PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE;
+        case 'biometric':
+          return null; // Biometric handled separately
+        default:
+          return null;
+      }
+    }
+  }, []);
+
+  const checkPermission = useCallback(async (type: PermissionType): Promise<boolean> => {
+    const permission = getPermission(type);
+    if (!permission) return true; // For unsupported permissions, return true
+
     try {
-      setLoading(true);
-      setError(null);
-      const granted = await PermissionService.requestCameraPermission();
-      return granted;
-    } catch (err) {
-      const errorMessage = 'Gagal meminta izin kamera';
-      setError(errorMessage);
-      Alert.alert('Error', errorMessage);
+      const result = await check(permission);
+      return result === RESULTS.GRANTED;
+    } catch (error) {
+      console.error('Error checking permission:', error);
+      return false;
+    }
+  }, [getPermission]);
+
+  const requestPermission = useCallback(async (type: PermissionType): Promise<boolean> => {
+    const permission = getPermission(type);
+    if (!permission) return true;
+
+    setIsLoading(true);
+    try {
+      const result = await request(permission);
+      return result === RESULTS.GRANTED;
+    } catch (error) {
+      console.error('Error requesting permission:', error);
+      Alert.alert('Error', `Gagal meminta izin ${type}`);
       return false;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  }, []);
+  }, [getPermission]);
 
-  const requestStoragePermission = useCallback(async (): Promise<boolean> => {
-    try {
-      setLoading(true);
-      setError(null);
-      const granted = await PermissionService.requestStoragePermission();
-      return granted;
-    } catch (err) {
-      const errorMessage = 'Gagal meminta izin penyimpanan';
-      setError(errorMessage);
-      Alert.alert('Error', errorMessage);
-      return false;
-    } finally {
-      setLoading(false);
+  const checkAndRequestPermission = useCallback(async (type: PermissionType): Promise<boolean> => {
+    const hasPermission = await checkPermission(type);
+    if (hasPermission) {
+      return true;
     }
-  }, []);
-
-  const requestPhotoLibraryPermission = useCallback(async (): Promise<boolean> => {
-    try {
-      setLoading(true);
-      setError(null);
-      const granted = await PermissionService.requestPhotoLibraryPermission();
-      return granted;
-    } catch (err) {
-      const errorMessage = 'Gagal meminta izin galeri foto';
-      setError(errorMessage);
-      Alert.alert('Error', errorMessage);
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const requestAllMediaPermissions = useCallback(async (): Promise<boolean> => {
-    try {
-      setLoading(true);
-      setError(null);
-      const granted = await PermissionService.requestAllMediaPermissions();
-      return granted;
-    } catch (err) {
-      const errorMessage = 'Gagal meminta izin media';
-      setError(errorMessage);
-      Alert.alert('Error', errorMessage);
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const checkCameraPermission = useCallback(async (): Promise<boolean> => {
-    try {
-      return await PermissionService.checkCameraPermission();
-    } catch (err) {
-      console.error('Error checking camera permission:', err);
-      return false;
-    }
-  }, []);
-
-  const checkStoragePermission = useCallback(async (): Promise<boolean> => {
-    try {
-      return await PermissionService.checkStoragePermission();
-    } catch (err) {
-      console.error('Error checking storage permission:', err);
-      return false;
-    }
-  }, []);
-
-  const checkPhotoLibraryPermission = useCallback(async (): Promise<boolean> => {
-    try {
-      return await PermissionService.checkPhotoLibraryPermission();
-    } catch (err) {
-      console.error('Error checking photo library permission:', err);
-      return false;
-    }
-  }, []);
-
-  const clearError = useCallback(() => {
-    setError(null);
-  }, []);
+    return await requestPermission(type);
+  }, [checkPermission, requestPermission]);
 
   return {
-    loading,
-    error,
-    requestCameraPermission,
-    requestStoragePermission,
-    requestPhotoLibraryPermission,
-    requestAllMediaPermissions,
-    checkCameraPermission,
-    checkStoragePermission,
-    checkPhotoLibraryPermission,
-    clearError,
+    isLoading,
+    checkPermission,
+    requestPermission,
+    checkAndRequestPermission,
   };
 };
-
-export default usePermissions;

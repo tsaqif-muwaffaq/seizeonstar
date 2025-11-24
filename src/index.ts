@@ -1,26 +1,26 @@
-// Export all components
-export { default as ImagePickerModal } from './components/ImagePickerModal';
-export { default as ImagePreview } from './components/ImagePreview';
-export { default as LoadingIndicator } from './components/LoadingIndicator';
-export { default as PermissionHandler } from './components/PermissionHandler';
-export { default as ProtectedRoute } from './components/ProtectedRoute';
-
-// Export all hooks
-export { default as useImagePicker } from './hooks/useImagePicker';
-export { default as useMultiImagePicker } from './hooks/useMultiImagePicker';
-export { default as useAuth } from './hooks/useAuth';
-export { default as useStorage } from './hooks/useStorage';
-export { default as useWishlist } from './hooks/useWishlist';
-export { default as usePermissions } from './hooks/usePermissions';
-
-// Export all services
-export { default as storageService } from './services/storageService';
-export { default as ImageService } from './services/imageService';
-export { default as CameraService } from './services/CameraService';
-export { default as DeepLinkService } from './services/deepLinkService';
-
-// Export all types
-export * from './types';
+// Export utama aplikasi
+import App from 'App';
+export { App };
 
 // Export context
 export { AuthProvider, useAuthContext } from './context/AuthContext';
+
+// Export components
+export * from './components';
+
+// Export hooks
+export * from './hooks';
+
+// Export services
+export * from './services';
+
+// Export types
+export * from './types';
+
+// Export screens
+export { HomeScreen } from './screens/HomeScreen';
+export { LoginScreen } from './screens/LoginScreen';
+export { TransferScreen } from './screens/TransferScreen';
+export { ProfileScreen } from './screens/ProfileScreen';
+export { ProductUploadScreen } from './screens/ProductUploadScreen';
+export { ProfileImageScreen } from './screens/ProfileImageScreen';

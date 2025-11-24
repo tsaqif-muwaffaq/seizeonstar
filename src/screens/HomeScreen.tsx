@@ -1,46 +1,112 @@
 import * as React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Alert
+} from 'react-native';
+import { useAuthContext } from '../context/AuthContext';
+import { useBiometric } from '../hooks/useBiometric';
+import { BiometricButton } from '../components/BiometricAuth/BiometricButton';
+import { BiometricSetup } from '../components/BiometricAuth/BiometricSetup';
 
-const HomeScreen: React.FC = () => {
-  const navigation = useNavigation();
+// Define prop types
+export interface HomeScreenProps {
+  navigation: any;
+}
+
+export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
+  const { user, logout, hasStoredCredentials } = useAuthContext();
+  const { biometricInfo, isAvailable } = useBiometric();
+
+  const handleLogout = async () => {
+    Alert.alert(
+      'Konfirmasi Logout',
+      'Apakah Anda yakin ingin logout?',
+      [
+        { text: 'Batal', style: 'cancel' },
+        { 
+          text: 'Logout', 
+          style: 'destructive',
+          onPress: async () => {
+            await logout();
+          }
+        }
+      ]
+    );
+  };
+
+  const handleTransfer = () => {
+    navigation.navigate('Transfer');
+  };
+
+  const handleProfile = () => {
+    navigation.navigate('Profile');
+  };
+
+  const handleTestBiometric = async () => {
+    Alert.alert('Biometric', 'Fitur biometric siap digunakan!');
+  };
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>Selamat Datang</Text>
-      <Text style={styles.subtitle}>Temukan produk terbaik untuk Anda</Text>
-      
-      <View style={styles.featureGrid}>
-        <TouchableOpacity 
-          style={styles.featureCard}
-          onPress={() => navigation.navigate('ProductList' as never)}
-        >
-          <Text style={styles.featureIcon}>🛍️</Text>
-          <Text style={styles.featureText}>Belanja</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.featureCard}
-          onPress={() => navigation.navigate('Cart' as never)}
-        >
-          <Text style={styles.featureIcon}>🛒</Text>
-          <Text style={styles.featureText}>Keranjang</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.featureCard}
-          onPress={() => navigation.navigate('Profile' as never)}
-        >
-          <Text style={styles.featureIcon}>👤</Text>
-          <Text style={styles.featureText}>Profil</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.featureCard}
-          onPress={() => navigation.navigate('ProductUpload' as never)}
-        >
-          <Text style={styles.featureIcon}>📦</Text>
-          <Text style={styles.featureText}>Jual Produk</Text>
+      <View style={styles.content}>
+        <Text style={styles.welcomeText}>
+          Selamat Datang, {user?.username || 'User'}!
+        </Text>
+
+        {/* Info Biometric */}
+        <View style={styles.infoCard}>
+          <Text style={styles.infoTitle}>Status Keamanan</Text>
+          <Text style={styles.infoText}>
+            {isAvailable 
+              ? `✅ ${biometricInfo.biometryType} tersedia`
+              : '❌ Biometric tidak tersedia'
+            }
+          </Text>
+          <Text style={styles.infoText}>
+            {hasStoredCredentials 
+              ? '✅ Credentials tersimpan dengan aman'
+              : '❌ Belum ada credentials tersimpan'
+            }
+          </Text>
+        </View>
+
+        {/* Quick Actions */}
+        <View style={styles.actionsContainer}>
+          <TouchableOpacity style={styles.actionButton} onPress={handleTransfer}>
+            <Text style={styles.actionButtonText}>Transfer</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionButton} onPress={handleProfile}>
+            <Text style={styles.actionButtonText}>Profil</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('ProductUpload')}>
+            <Text style={styles.actionButtonText}>Upload Produk</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('ProfileImage')}>
+            <Text style={styles.actionButtonText}>Foto Profil</Text>
+          </TouchableOpacity>
+
+          <BiometricButton
+            onPress={handleTestBiometric}
+            title="Tes Biometric"
+            context="untuk Tes"
+          />
+        </View>
+
+        {/* Biometric Setup Prompt */}
+        {!isAvailable && (
+          <BiometricSetup />
+        )}
+
+        {/* Logout Button */}
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutButtonText}>Logout</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -50,44 +116,62 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white',
-    padding: 16,
+    backgroundColor: '#FFFFFF',
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 8,
-    color: '#333',
-  },
-  subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 30,
-    color: '#666',
-  },
-  featureGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  featureCard: {
-    width: '48%',
-    backgroundColor: '#F8F9FA',
+  content: {
     padding: 20,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 16,
   },
-  featureIcon: {
-    fontSize: 32,
-    marginBottom: 8,
+  welcomeText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    color: '#1C1C1E',
+    textAlign: 'center',
   },
-  featureText: {
-    fontSize: 14,
+  infoCard: {
+    backgroundColor: '#F8F9FA',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: '#007AFF',
+  },
+  infoTitle: {
+    fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    marginBottom: 8,
+    color: '#1C1C1E',
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#666666',
+    marginBottom: 4,
+  },
+  actionsContainer: {
+    marginBottom: 20,
+  },
+  actionButton: {
+    backgroundColor: '#007AFF',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  actionButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  logoutButton: {
+    backgroundColor: '#FF3B30',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  logoutButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
-
-export default HomeScreen;

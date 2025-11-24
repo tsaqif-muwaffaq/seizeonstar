@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import useAuth from '../hooks/useAuth';
+import { useAuth } from '../hooks/useAuth';
 
 const SplashScreen: React.FC = () => {
   const navigation = useNavigation();
