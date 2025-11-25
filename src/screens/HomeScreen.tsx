@@ -12,12 +12,7 @@ import { useBiometric } from '../hooks/useBiometric';
 import { BiometricButton } from '../components/BiometricAuth/BiometricButton';
 import { BiometricSetup } from '../components/BiometricAuth/BiometricSetup';
 
-// Define prop types
-export interface HomeScreenProps {
-  navigation: any;
-}
-
-export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
+export const HomeScreen: React.FC<any> = ({ navigation }) => {
   const { user, logout, hasStoredCredentials } = useAuthContext();
   const { biometricInfo, isAvailable } = useBiometric();
 
@@ -36,14 +31,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         }
       ]
     );
-  };
-
-  const handleTransfer = () => {
-    navigation.navigate('Transfer');
-  };
-
-  const handleProfile = () => {
-    navigation.navigate('Profile');
   };
 
   const handleTestBiometric = async () => {
@@ -76,20 +63,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
         {/* Quick Actions */}
         <View style={styles.actionsContainer}>
-          <TouchableOpacity style={styles.actionButton} onPress={handleTransfer}>
-            <Text style={styles.actionButtonText}>Transfer</Text>
+          <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Transfer')}>
+            <Text style={styles.actionButtonText}>💰 Transfer</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionButton} onPress={handleProfile}>
-            <Text style={styles.actionButtonText}>Profil</Text>
+          <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Profile')}>
+            <Text style={styles.actionButtonText}>👤 Profil</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Location')}>
+            <Text style={styles.actionButtonText}>📍 Fitur Lokasi</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('ProductUpload')}>
-            <Text style={styles.actionButtonText}>Upload Produk</Text>
+            <Text style={styles.actionButtonText}>📦 Upload Produk</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('ProfileImage')}>
-            <Text style={styles.actionButtonText}>Foto Profil</Text>
+            <Text style={styles.actionButtonText}>🖼️ Foto Profil</Text>
           </TouchableOpacity>
 
           <BiometricButton

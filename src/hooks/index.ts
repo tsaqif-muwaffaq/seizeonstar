@@ -1,4 +1,3 @@
-// Export semua hooks
 export { useAuth } from './useAuth';
 export { useBiometric } from './useBiometric';
 export { useStorage } from './useStorage';
@@ -9,3 +8,5 @@ export { useMultiImagePicker } from './useMultiImagePicker';
 export { useNetworkStatus } from './useNetworkStatus';
 export { usePermissions } from './usePermissions';
 export { useWishlist } from './useWishlist';
+export { useLocation } from './useLocation';
+export { useGeofencing } from './useGeofencing';

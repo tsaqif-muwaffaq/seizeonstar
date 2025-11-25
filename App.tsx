@@ -8,6 +8,7 @@ import { TransferScreen } from './src/screens/TransferScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { ProductUploadScreen } from './src/screens/ProductUploadScreen';
 import { ProfileImageScreen } from './src/screens/ProfileImageScreen';
+import { LocationScreen } from './src/screens/LocationScreen';
 
 // Define stack param list
 export type RootStackParamList = {
@@ -16,6 +17,7 @@ export type RootStackParamList = {
   Profile: undefined;
   ProductUpload: undefined;
   ProfileImage: undefined;
+  Location: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -58,6 +60,14 @@ function MainApp() {
         component={ProfileScreen}
         options={{ 
           title: 'Profil',
+          headerBackTitle: 'Kembali'
+        }}
+      />
+      <Stack.Screen 
+        name="Location" 
+        component={LocationScreen}
+        options={{ 
+          title: 'Fitur Lokasi',
           headerBackTitle: 'Kembali'
         }}
       />
