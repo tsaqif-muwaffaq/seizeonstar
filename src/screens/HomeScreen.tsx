@@ -1,168 +1,40 @@
 import * as React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  Alert
-} from 'react-native';
-import { useAuthContext } from '../context/AuthContext';
-import { useBiometric } from '../hooks/useBiometric';
-import { BiometricButton } from '../components/BiometricAuth/BiometricButton';
-import { BiometricSetup } from '../components/BiometricAuth/BiometricSetup';
+import { useState, useEffect } from 'react';
+import { View, FlatList, ActivityIndicator } from 'react-native';
+import PokemonCard from '../components/PokemonCard';
+import { getPokemonList } from '../api/pokeapi';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/MainStack';
 
-export const HomeScreen: React.FC<any> = ({ navigation }) => {
-  const { user, logout, hasStoredCredentials } = useAuthContext();
-  const { biometricInfo, isAvailable } = useBiometric();
+type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
-  const handleLogout = async () => {
-    Alert.alert(
-      'Konfirmasi Logout',
-      'Apakah Anda yakin ingin logout?',
-      [
-        { text: 'Batal', style: 'cancel' },
-        { 
-          text: 'Logout', 
-          style: 'destructive',
-          onPress: async () => {
-            await logout();
-          }
-        }
-      ]
-    );
+export default function HomeScreen({ navigation }: Props) {
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = async () => {
+    try {
+      const res = await getPokemonList(20, 0);
+      setData(res.data.results);
+    } catch (e) {}
+    setLoading(false);
   };
 
-  const handleTestBiometric = async () => {
-    Alert.alert('Biometric', 'Fitur biometric siap digunakan!');
-  };
+  useEffect(() => { load(); }, []);
+
+  if (loading) return <ActivityIndicator size="large" style={{ marginTop: 40 }} />;
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.welcomeText}>
-          Selamat Datang, {user?.username || 'User'}!
-        </Text>
-
-        {/* Info Biometric */}
-        <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>Status Keamanan</Text>
-          <Text style={styles.infoText}>
-            {isAvailable 
-              ? `✅ ${biometricInfo.biometryType} tersedia`
-              : '❌ Biometric tidak tersedia'
-            }
-          </Text>
-          <Text style={styles.infoText}>
-            {hasStoredCredentials 
-              ? '✅ Credentials tersimpan dengan aman'
-              : '❌ Belum ada credentials tersimpan'
-            }
-          </Text>
-        </View>
-
-        {/* Quick Actions */}
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Transfer')}>
-            <Text style={styles.actionButtonText}>💰 Transfer</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Profile')}>
-            <Text style={styles.actionButtonText}>👤 Profil</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Location')}>
-            <Text style={styles.actionButtonText}>📍 Fitur Lokasi</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('ProductUpload')}>
-            <Text style={styles.actionButtonText}>📦 Upload Produk</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('ProfileImage')}>
-            <Text style={styles.actionButtonText}>🖼️ Foto Profil</Text>
-          </TouchableOpacity>
-
-          <BiometricButton
-            onPress={handleTestBiometric}
-            title="Tes Biometric"
-            context="untuk Tes"
-          />
-        </View>
-
-        {/* Biometric Setup Prompt */}
-        {!isAvailable && (
-          <BiometricSetup />
-        )}
-
-        {/* Logout Button */}
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutButtonText}>Logout</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+    <FlatList
+      data={data}
+      keyExtractor={(i) => i.name}
+      renderItem={({ item }) => (
+        <PokemonCard
+          name={item.name}
+          image={`https://img.pokemondb.net/sprites/black-white/normal/${item.name}.png`}
+          onPress={() => navigation.navigate('Detail', { name: item.name })}
+        />
+      )}
+    />
   );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  content: {
-    padding: 20,
-  },
-  welcomeText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#1C1C1E',
-    textAlign: 'center',
-  },
-  infoCard: {
-    backgroundColor: '#F8F9FA',
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 20,
-    borderLeftWidth: 4,
-    borderLeftColor: '#007AFF',
-  },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-    color: '#1C1C1E',
-  },
-  infoText: {
-    fontSize: 14,
-    color: '#666666',
-    marginBottom: 4,
-  },
-  actionsContainer: {
-    marginBottom: 20,
-  },
-  actionButton: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  actionButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  logoutButton: {
-    backgroundColor: '#FF3B30',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  logoutButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
+}
